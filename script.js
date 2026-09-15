@@ -1,4 +1,5 @@
-// ===== 1. SETUP =====
+// ===== 1. SETUP ===== 
+localStorage.removeItem("jarvis_key");
 const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');

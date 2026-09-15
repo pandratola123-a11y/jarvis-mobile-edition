@@ -1,3 +1,4 @@
+
 function add(text,cls){
  const d=document.createElement('div');
  d.className="msg "+cls;

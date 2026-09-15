@@ -1,11 +1,6 @@
 // ===== 1. SETUP =====
-const API_KEYS = [
-  "PEHLI_KEY_YAHAN_DALO",
-  "DUSRI_KEY_YAHAN_DALO"
-];
-let keyIndex = 0;
-let MINI_API_KEY = API_KEYS[keyIndex];
-localStorage.setItem("jarvis_key", MINI_API_KEY);
+const MINI_API_KEY = localStorage.getItem("jarvis_key")...
+if(MINI_API_KEY) localStorage.setItem...
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
 const micBtn = document.getElementById('mic');

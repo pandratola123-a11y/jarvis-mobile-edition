@@ -17,11 +17,7 @@ function addMsg(text, who){
   return div;
 }
 
-// ===== 2. WELCOME MESSAGE =====
-addMsg("System Online. I am JARVIS, Sir.", 'jarvis');
-}
-
-// ===== 3. ASK GEMINI =====
+// ===== 2. ASK GEMINI =====
 async function askGemini(q){
   if(!q) return;
   const thinking = addMsg("Thinking...", 'jarvis');
@@ -41,7 +37,7 @@ async function askGemini(q){
   }
 }
 
-// ===== 4. MIC / SPEECH RECOGNITION =====
+// ===== 3. MIC / SPEECH RECOGNITION =====
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if(SR){
   const rec = new SR();
@@ -58,7 +54,7 @@ if(SR){
   rec.onend = ()=>{ micBtn.innerText = '🎤'; };
 }
 
-// ===== 5. VOICE =====
+// ===== 4. VOICE =====
 let voices=[];
 function loadVoices(){ voices=speechSynthesis.getVoices(); }
 loadVoices();
@@ -71,7 +67,7 @@ function speak(t){
   speechSynthesis.speak(u);
 }
 
-// ===== 6. SEND BUTTON =====
+// ===== 5. SEND BUTTON =====
 document.getElementById('send').onclick=()=>{
   const q = input.value.trim();
   if(!q) return;
@@ -79,7 +75,8 @@ document.getElementById('send').onclick=()=>{
   input.value='';
   handleInput(q);
 };
-// ===== 7. LOCAL COMMANDS + SMART ROUTING =====
+
+// ===== 6. LOCAL COMMANDS + SMART ROUTING =====
 function handleInput(q){
   const low = q.toLowerCase();
   if(low.includes("time")){
@@ -95,4 +92,6 @@ function handleInput(q){
   askGemini(q);
 }
 
+// ===== 7. EXTRA + WELCOME =====
 input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
+addMsg("System Online. I am JARVIS, Sir.", 'jarvis');

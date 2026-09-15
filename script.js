@@ -1,6 +1,6 @@
 // ===== 1. SETUP =====
-const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
-const chat = document.getElementById('chat');
+const MINI_API_KEY = localStorage.getItem("jarvis_key") || prompt("Apni Gemini API Key dalo:");
+if(MINI_API_KEY) localStorage.setItem("jarvis_key", MINI_API_KEY);
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
 const micBtn = document.getElementById('mic');

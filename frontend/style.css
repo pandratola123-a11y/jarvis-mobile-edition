@@ -26,3 +26,4 @@ header p{font-size:10px;letter-spacing:4px;opacity:0.6}
 .input-area{display:flex;gap:10px;margin-top:10px}
 .input-area input{flex:1;background:#000;border:1px solid #0ff;color:#0ff;padding:10px}
 button{background:#0ff;color:#000;border:none;padding:10px 16px;font-weight:bold}
+#mic{ font-size:18px; }

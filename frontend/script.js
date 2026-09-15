@@ -1,3 +1,10 @@
+function add(text,cls){
+  const d=document.createElement('div');
+  d.className='msg '+cls;
+  d.innerText=text;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
 const chat=document.getElementById('chat');
 const input=document.getElementById('msg');
 

@@ -18,11 +18,11 @@ function addMsg(text, who){
 }
 
 // ===== 2. ASK GEMINI =====
-async function askGemini(q){
+async function askgemini(q){
   if(!q) return;
   const thinking = addMsg("Thinking...", 'jarvis');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${MINI_API_KEY}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text: q}]}]})
@@ -92,7 +92,7 @@ function handleInput(q){
   askGemini(q);
 }
 
-// ===== 7. EXTRA + WELCOME =====
+// ===== 7. EXTRA + WELCOME =====a
 input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
 addMsg("System Online. I am JARVIS, Sir.", 'jarvis');
 

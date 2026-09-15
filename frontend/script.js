@@ -1,9 +1,9 @@
 function add(text,cls){
-  const d=document.createElement('div');
-  d.className='msg '+cls;
-  d.innerText=text;
-  chat.appendChild(d);
-  chat.scrollTop=chat.scrollHeight;
+ const d=document.createElement('div');
+ d.className="msg "+cls;
+ d.innerText=text;
+ chat.appendChild(d);
+ chat.scrollTop=chat.scrollHeight;
 }
 const chat=document.getElementById('chat');
 const input=document.getElementById('msg');
@@ -15,6 +15,6 @@ document.getElementById('send').onclick=()=>{
  input.value='';
  add('J.A.R.V.I.S: Processing...','ai');
  setTimeout(()=>{
-  chat.lastChild.innerText='J.A.R.V.I.S: Systems online. How may i assi';
+  chat.lastChild.innerText='J.A.R.V.I.S: Systems online. How may I assist you?';
  },1000);
 };

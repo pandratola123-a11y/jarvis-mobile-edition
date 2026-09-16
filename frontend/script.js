@@ -1,6 +1,9 @@
-f// ===== 1. SETUP =====
-localStorage.removeItem("jarvis_key");
-const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
+// ---- 1. SETUP -----
+const MINI_API_KEY = localStorage.getItem("jarvis_key");
+if (!MINI_API_KEY) {
+  const k = prompt("Gemini API Key Dalo:");
+  if(k){ localStorage.setItem("jarvis_key", k.trim()); location.reload(); }
+}
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');

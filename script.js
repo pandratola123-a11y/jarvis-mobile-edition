@@ -78,50 +78,58 @@ function speak(t){
   speechSynthesis.speak(u);
 }
 
-// ===== 6. LOCAL COMMANDS + AUTOMATION + MEMORY =====
+// ===== 5. LOCAL COMMANDS + AUTOMATION + MEMORY =====
 function handleInput(q){
   const low = q.toLowerCase();
   addMsg(q, "user");
-
   function save(q, a){
     let old = JSON.parse(localStorage.getItem("jarvis_memory")||"[]");
     old.push({q:q, a:a, time:new Date().toLocaleString()});
     localStorage.setItem("jarvis_memory", JSON.stringify(old));
   }
 
+  if(low.includes("go home") || low.includes("home jao")){
+    const r="Going Home, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.history.back(); return;
+  }
+
+  // DYNAMIC INSTAGRAM SEARCH - Koi bhi naam
+  if(low.includes("instagram")){
+    // "instagram par rahul search karo" -> rahul nikal lega
+    // "sarita ko instagram me search karo" -> sarita nikal lega
+    let keyword = q.toLowerCase()
+      .replace("instagram","")
+      .replace("par","").replace("pe","").replace("me","").replace("on","")
+      .replace("search","").replace("karo","").replace("kar","").replace("ko","")
+      .replace("open","").replace("kholo","")
+      .trim();
+    
+    if(keyword){
+      const r=`Searching ${keyword} on Instagram, Sir.`; addMsg(r, "jarvis"); speak(r); save(q,r);
+      window.location.href = `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(keyword)}`; 
+      return;
+    } else {
+      const r="Opening Instagram, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+      window.location.href="https://www.instagram.com"; return;
+    }
+  }
+
   if(low.includes("youtube")){
-    const r="Opening YouTube, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    let kw = q.toLowerCase().replace("youtube","").replace("par","").replace("pe","").replace("search","").replace("karo","").replace("open","").trim();
+    if(kw){ 
+      window.location.href=`https://m.youtube.com/results?search_query=${encodeURIComponent(kw)}`; return; 
+    }
     window.location.href="https://m.youtube.com"; return;
   }
-  if(low.includes("whatsapp")){
-    const r="Opening WhatsApp, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
-    window.location.href="https://wa.me/"; return;
-  }
-  if(low.includes("instagram")){
-    const r="Opening Instagram, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
-    window.location.href="https://instagram.com"; return;
-  }
-  if(low.includes("google")){
-    const r="Opening Google, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
-    window.location.href="https://google.com"; return;
-  }
-  if(low.includes("map")){
-    const r="Opening Maps, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
-    window.location.href="https://maps.google.com"; return;
-  }
-  if(low.includes("time")){
-    const r="Time is "+new Date().toLocaleTimeString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return;
-  }
-  if(low.includes("date")){
-    const r="Today is "+new Date().toDateString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return;
-  }
 
-  askGemini(q).then(reply=>{
-    if(reply) save(q, reply);
-  });
+  if(low.includes("time")){ const r="Time is "+new Date().toLocaleTimeString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return; }
+  if(low.includes("date")){ const r="Today is "+new Date().toDateString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return; }
+  
+  askGemini(q).then(reply=>{ if(reply) save(q, reply); });
 }
+ 
 
-// ===== 7. WELCOME + SEND =====
+// ===== 6. WELCOME + SEND =====
 document.getElementById('send').onclick=()=>{
   const q = input.value.trim();
   if(!q) return;

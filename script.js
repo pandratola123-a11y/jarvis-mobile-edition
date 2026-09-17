@@ -1,10 +1,18 @@
-// ===== 1. SETUP ===== 
-localStorage.removeItem("jarvis_key");
-const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
+// ===== 1. SETUP =====
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
 const micBtn = document.getElementById('mic');
+const apiBox = document.getElementById('api-box');
+
+function getKey(){ return localStorage.getItem('GEMINI_KEY'); }
+function saveKey(){
+  const k = document.getElementById('api-input').value.trim();
+  if(!k){ alert('Key khali hai'); return; }
+  localStorage.setItem('GEMINI_KEY', k);
+  location.reload();
+}
+setTimeout(()=>{ if(!getKey() && apiBox) apiBox.style.display='block'; }, 800);
 
 function addMsg(text, who){
   const div = document.createElement('div');
@@ -21,6 +29,8 @@ function addMsg(text, who){
 // ===== 2. ASK GEMINI =====
 async function askGemini(q){
   if(!q) return;
+  const GEMINI_API_KEY = getKey();
+  if(!GEMINI_API_KEY){ if(apiBox) apiBox.style.display='block'; throw new Error('Pehle API Key daalo'); }
   const thinking = addMsg("Thinking...", 'jarvis');
   try{
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -33,6 +43,7 @@ async function askGemini(q){
     const reply = data.candidates[0].content.parts[0].text;
     thinking.innerText = 'J.A.R.V.I.S: ' + reply;
     speak(reply);
+    return reply;
   }catch(e){
     thinking.innerText = 'J.A.R.V.I.S: ERROR - ' + e.message;
   }
@@ -45,12 +56,11 @@ if(SR){
   rec.lang = 'en-US';
   rec.onresult = (e)=>{
     const t = e.results[0][0].transcript;
-    addMsg(t, 'user');
     handleInput(t);
   };
   micBtn.onclick = ()=>{
     rec.start();
-    micBtn.innerText = 'LISTENING....';
+    micBtn.innerText = 'LISTENING...';
   };
   rec.onend = ()=>{ micBtn.innerText = '🎤'; };
 }
@@ -68,16 +78,7 @@ function speak(t){
   speechSynthesis.speak(u);
 }
 
-// ===== 5. SEND BUTTON =====
-document.getElementById('send').onclick=()=>{
-  const q = input.value.trim();
-  if(!q) return;
-  addMsg(q, 'user');
-  input.value='';
-  handleInput(q);
-};
-
-// ===== 6. LOCAL COMMANDS + AUTOMATION + MEMORY STORAGE =====
+// ===== 6. LOCAL COMMANDS + AUTOMATION + MEMORY =====
 function handleInput(q){
   const low = q.toLowerCase();
   addMsg(q, "user");
@@ -115,12 +116,17 @@ function handleInput(q){
     const r="Today is "+new Date().toDateString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return;
   }
 
-  // Agar koi command nahi mila toh AI se pucho
   askGemini(q).then(reply=>{
-    save(q, reply);
+    if(reply) save(q, reply);
   });
 }
 
-// ===== 7. WELCOME =====
-document.getElementById("input").addEventListener("keypress", (e)=>{ if(e.key=="Enter") document.getElementById("send").click(); });
+// ===== 7. WELCOME + SEND =====
+document.getElementById('send').onclick=()=>{
+  const q = input.value.trim();
+  if(!q) return;
+  input.value='';
+  handleInput(q);
+};
+document.getElementById('msg').addEventListener("keypress", (e)=>{ if(e.key=="Enter") document.getElementById("send").click(); });
 addMsg("System Online. I am JARVIS, Sir.", "jarvis");

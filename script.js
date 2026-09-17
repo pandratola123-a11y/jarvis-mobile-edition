@@ -77,20 +77,50 @@ document.getElementById('send').onclick=()=>{
   handleInput(q);
 };
 
-// ===== 6. LOCAL COMMANDS + SMART ROUTING =====
+// ===== 6. LOCAL COMMANDS + AUTOMATION + MEMORY STORAGE =====
 function handleInput(q){
-  const low=q.toLowerCase();
-  addMsg(q,"user");
-  let reply="";
-  if(low.includes("time")){ reply="Current time is "+new Date().toLocaleTimeString(); }
-  else if(low.includes("date")){ reply="Today is "+new Date().toDateString(); }
-  else if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); reply="Opening YouTube, Sir."; }
-  else if(low.includes("google")){ window.open("https://google.com","_blank"); reply="Opening Google, Sir."; }
-  else { askGemini(q).then(r=>{localStorage.setItem("jarvis_memory",JSON.stringify([...JSON.parse(localStorage.getItem("jarvis_memory")||"[]"),{q:q,a:r,time:new Date().toLocaleString()}]));}); return; }
-  addMsg(reply,"jarvis");
-  let m=JSON.parse(localStorage.getItem("jarvis_memory")||"[]"); m.push({q:q,a:reply,time:new Date().toLocaleString()}); localStorage.setItem("jarvis_memory",JSON.stringify(m));
+  const low = q.toLowerCase();
+  addMsg(q, "user");
+
+  function save(q, a){
+    let old = JSON.parse(localStorage.getItem("jarvis_memory")||"[]");
+    old.push({q:q, a:a, time:new Date().toLocaleString()});
+    localStorage.setItem("jarvis_memory", JSON.stringify(old));
+  }
+
+  if(low.includes("youtube")){
+    const r="Opening YouTube, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.location.href="https://m.youtube.com"; return;
+  }
+  if(low.includes("whatsapp")){
+    const r="Opening WhatsApp, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.location.href="https://wa.me/"; return;
+  }
+  if(low.includes("instagram")){
+    const r="Opening Instagram, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.location.href="https://instagram.com"; return;
+  }
+  if(low.includes("google")){
+    const r="Opening Google, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.location.href="https://google.com"; return;
+  }
+  if(low.includes("map")){
+    const r="Opening Maps, Sir."; addMsg(r, "jarvis"); speak(r); save(q,r);
+    window.location.href="https://maps.google.com"; return;
+  }
+  if(low.includes("time")){
+    const r="Time is "+new Date().toLocaleTimeString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return;
+  }
+  if(low.includes("date")){
+    const r="Today is "+new Date().toDateString()+" Sir."; addMsg(r, "jarvis"); speak(r); save(q,r); return;
+  }
+
+  // Agar koi command nahi mila toh AI se pucho
+  askGemini(q).then(reply=>{
+    save(q, reply);
+  });
 }
 
-// ===== 7. EXTRA + WELCOME =====
-input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
-addMsg("System Online. I am JARVIS, Sir.", 'jarvis');
+// ===== 7. WELCOME =====
+document.getElementById("input").addEventListener("keypress", (e)=>{ if(e.key=="Enter") document.getElementById("send").click(); });
+addMsg("System Online. I am JARVIS, Sir.", "jarvis");

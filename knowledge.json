@@ -1,0 +1,6 @@
+[
+  {"q": "hello", "a": "Hello Sir, JARVIS Online. System ready for offline mode."},
+  {"q": "who are you", "a": "I am JARVIS, your AI assistant. I am working offline now."},
+  {"q": "time", "a": "TIME_NOW"},
+  {"q": "battery", "a": "Sir, checking system status... All systems nominal."}
+]

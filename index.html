@@ -33,5 +33,12 @@
 </div>
 
 <script src="script.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('JARVIS Offline Ready');
+    });
+  }
+</script>
 </body>
 </html>

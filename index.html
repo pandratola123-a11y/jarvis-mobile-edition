@@ -3,42 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>J.A.R.V.I.S.</title>
+<title>J.A.R.V.I.S</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00ffff">
+<meta name="theme-color" content="#00FFFF">
 </head>
 <body>
-<header><h1>J.A.R.V.I.S</h1><p>MOBILE EDITION</p></header>
+<header><h1>J.A.R.V.I.S // MOBILE EDITION</h1></header>
 
 <div class="core">
-  <div class="ring r1"></div>
-  <div class="ring r2"></div>
-  <div class="center"></div>
+<div class="ring r1"></div>
+<div class="ring r2"></div>
+<div class="ring r3"></div>
+<div class="center"></div>
 </div>
 <p class="core-text">CORE ACTIVE</p>
 
 <div class="status">
-  <h2>SYSTEM STATUS</h2>
-  <div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
-  <div class="row"><span>NETWORK</span><b class="on">ONLINE</b></div>
-  <div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
-  <div class="row"><span>MEMORY</span><b class="off">65%</b></div>
+SYSTEM STATUS
+<div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
+<div class="row"><span>NETWORK</span><b class="on">ONLINE</b></div>
+<div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
+<div class="row"><span>MEMORY</span><b class="off">OFF</b></div>
 </div>
 
 <div class="chat" id="chat"></div>
+
 <div class="input-area">
-  <input id="msg" placeholder="Ask J.A.R.V.I.S...">
-  <button id="send">SEND</button> <button id="mic">🎤</button>
+<input id="msg" placeholder="Ask J.A.R.V.I.S...">
+<button id="send">SEND</button>
+<button id="mic">🎤</button>
+</div>
+
+<div id="api-box" style="position:fixed;bottom:90px;left:10px;right:10px;background:#0a0a0a;border:1px solid #00FFFF;padding:15px;border-radius:12px;z-index:9999;display:none;">
+<p style="color:#00FFFF;margin:0 0 10px 0;font-weight:bold;">🔑 API Key Daalo</p>
+<input id="api-input" type="text" placeholder="AIza..." style="width:100%;padding:10px;border-radius:6px;background:#111;color:#fff;border:1px solid #333;">
+<button onclick="saveKey()" style="margin-top:10px;width:100%;padding:10px;background:#00FFFF;border:none;border-radius:6px;font-weight:bold;">SAVE</button>
+<p style="color:#666;font-size:11px;margin-top:6px;">aistudio.google.com/app/apikey se lo</p>
 </div>
 
 <script src="script.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(() => {
-      console.log('JARVIS Offline Ready');
-    });
-  }
-</script>
 </body>
 </html>

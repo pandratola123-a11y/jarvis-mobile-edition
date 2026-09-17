@@ -79,18 +79,16 @@ document.getElementById('send').onclick=()=>{
 
 // ===== 6. LOCAL COMMANDS + SMART ROUTING =====
 function handleInput(q){
-  const low = q.toLowerCase();
-  if(low.includes("time")){
-    const t = new Date().toLocaleTimeString();
-    addMsg("Current time is " + t, 'jarvis'); speak(t); return;
-  }
-  if(low.includes("date")){
-    const d = new Date().toDateString();
-    addMsg("Today is " + d, 'jarvis'); speak(d); return;
-  }
-  if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); addMsg("Opening YouTube, Sir.", 'jarvis'); return; }
-  if(low.includes("google")){ window.open("https://google.com","_blank"); addMsg("Opening Google, Sir.", 'jarvis'); return; }
-  askGemini(q);
+  const low=q.toLowerCase();
+  addMsg(q,"user");
+  let reply="";
+  if(low.includes("time")){ reply="Current time is "+new Date().toLocaleTimeString(); }
+  else if(low.includes("date")){ reply="Today is "+new Date().toDateString(); }
+  else if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); reply="Opening YouTube, Sir."; }
+  else if(low.includes("google")){ window.open("https://google.com","_blank"); reply="Opening Google, Sir."; }
+  else { askGemini(q).then(r=>{localStorage.setItem("jarvis_memory",JSON.stringify([...JSON.parse(localStorage.getItem("jarvis_memory")||"[]"),{q:q,a:r,time:new Date().toLocaleString()}]));}); return; }
+  addMsg(reply,"jarvis");
+  let m=JSON.parse(localStorage.getItem("jarvis_memory")||"[]"); m.push({q:q,a:reply,time:new Date().toLocaleString()}); localStorage.setItem("jarvis_memory",JSON.stringify(m));
 }
 
 // ===== 7. EXTRA + WELCOME =====

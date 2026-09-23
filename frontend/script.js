@@ -1,101 +1,150 @@
-// ---- 1. SETUP -----
-const MINI_API_KEY = localStorage.getItem("jarvis_key");
-if (!MINI_API_KEY) {
-  const k = prompt("Gemini API Key Dalo:");
-  if(k){ localStorage.setItem("jarvis_key", k.trim()); location.reload(); }
+// ===== 1. API KEY & SMART MODELS =====
+let APIKEY = localStorage.getItem('jarvis_key');
+if(!API_KEY)_{
+  API_KEY = prompt('Enter your Gemini API Key:');
+  if(API_KEY) localStorage.setItem('jarvis_key', API_KEY);
 }
-const chat = document.getElementById('chat');
-const input = document.getElementById('msg');
-const sendBtn = document.getElementById('send');
-const micBtn = document.getElementById('mic');
+const MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
 
-function addMsg(text, who){
-  const div = document.createElement('div');
-  div.style.margin="10px"; div.style.padding="10px";
-  div.style.borderRadius="8px";
-  div.style.border="1px solid #00ffff";
-  div.style.color = who==='user'? '#fff' : '#00ffff';
-  div.innerText = (who==='user'? 'YOU: ' : 'J.A.R.V.I.S: ') + text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-  return div;
+// ===== 2. MEMORY SYSTEM=====
+let MEMORY = JSON.parse(localStorage.getItem('jarvis_memory') || '[]');
+function saveMemory(){
+  localStorage.setItem('jarvis_memory', JSON.stringify(MEMORY));
 }
+const chat=document.getElementById('chat');
+const input=document.getElementById('msg');
+const micBtn=document.getElementById('mic-btn');
+const clearBtn=document.getElementById('clear-btn');
+const camBtn=document.getElementById('cam-btn');
+const imgInput=document.getElementById('img-input');
+MEMORY.forEach(m=> add((m.role==='user'?'YOU: ':'J.A.R.V.I.S: ')+m.text, m.role==='user'?'user':'ai'));
 
-// ===== 2. ASK GEMINI =====
-async function askGemini(q){
-  if(!q) return;
-  const thinking = addMsg("Thinking...", 'jarvis');
+// ===== 3. GEMINI BRAIN (MEMORY INTEGRATED) =====
+async function callGemini(p){
+  const contents =MEMORY.slice(-12).map(m=>({role:m.role, parts:[{text:m.text}]}));
+  contents.push({role:'user', parts:[{text:p}]});
+  let lastErr;
+  for(const m of MODELS){
+    try{
+      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:contents})});
+      const data=await res.json();
+      if(data.error){
+        lastErr=new Error(data.error.message);
+        if(/high demand|temporar|quota|rate|unavailable|deprecated/i.test(data.error.message)) continue;
+        throw lastErr;
+      }
+      return data.candidates[0].content.parts[0].text;
+    }catch(e){
+      lastErr=e;
+    }
+  }
+  throw lastErr;
+}
+async function askGemini(p){
+  add('J.A.R.V.I.S: Thinking...','ai');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${MINI_API_KEY}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({contents:[{parts:[{text: q}]}]})
-    });
-    const data = await res.json();
-    if(data.error) throw new Error(data.error.message);
-    const reply = data.candidates[0].content.parts[0].text;
-    thinking.innerText = 'J.A.R.V.I.S: ' + reply;
+    const reply=await callGemini(p);
+    MEMORY.push({role:'user',text:p});
+    MEMORY.push({role:'model',text:reply});
+    saveMemory();
+    chat.lastChild.innerText='J.A.R.V.I.S: '+reply;
     speak(reply);
   }catch(e){
-    thinking.innerText = 'J.A.R.V.I.S: ERROR - ' + e.message;
+    chat.lastChild.innerText='J.A.R.V.I.S: ERROR - '+e.message;
   }
 }
 
-// ===== 3. MIC / SPEECH RECOGNITION =====
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if(SR){
-  const rec = new SR();
-  rec.lang = 'en-US';
-  rec.onresult = (e)=>{
-    const t = e.results[0][0].transcript;
-    addMsg(t, 'user');
-    handleInput(t);
+// ===== 4. VISION ENGINE (EYES) =====
+if(camBtn && imgInput){
+  camBtn.onclick=()=>imgInput.click();
+  imgInput.onchange=()=>{
+    const file=imgInput.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const base64=reader.result.split(',')[1];
+      const q=input.value.trim()||'What do you see? Describe briefly.';
+      add('YOU: [IMAGE] '+q,'user');
+      input.value='';
+      askVision(base64,file.type,q);
+    };
+    reader.readAsDataURL(file);
   };
-  micBtn.onclick = ()=>{
-    rec.start();
-    micBtn.innerText = 'LISTENING....';
-  };
-  rec.onend = ()=>{ micBtn.innerText = '🎤'; };
+}
+async function askVision(base64,mime,q){
+  add('J.A.R.V.I.S: Analyzing image...','ai');
+  let lastErr;
+  for(const m of MODELS){
+    try{
+      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY, {method:"POST",headers:{"Content-Type":"application/json"}, body:JSON.stringify({contents:[{parts:[{text:q},{inline_data:{mime_type:mime,data:base64}}]}]})});
+      const data=await res.json();
+      if(data.error){
+        lastErr=new Error(data.error.message);
+        if(/high demand|temporar|quota|rate|unavailable|deprecated/i.test(data.error.message)) continue;
+        throw lastErr;
+      }
+      const reply=data.candidates[0].content.parts[0].text;
+      chat.lastChild.innerText='J.A.R.V.I.S: '+reply;
+      speak(reply);
+      return;
+    }catch(e){
+      lastErr=e;
+    }
+  }
+  chat.lastChild.innerText='J.A.R.V.I.S: ERROR - '+lastErr.message;
 }
 
-// ===== 4. VOICE =====
+// ===== 5. VOICE & UTILS =====
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR && micBtn){
+  const rec=new SR();
+  rec.lang='en-US';
+  rec.onresult=(e)=>{
+    const t=e.results[0][0].transcript;
+    add('YOU: '+t,'user');
+    askGemini(t);
+  };
+  micBtn.onclick=()=>{
+    rec.start();
+    micBtn.innerText='LISTENING...';
+  };
+  rec.onend=()=>{
+    micBtn.innerText='🎙';
+  };
+}
 let voices=[];
-function loadVoices(){ voices=speechSynthesis.getVoices(); }
+function loadVoices(){
+  voices=speechSynthesis.getVoices();
+}
 loadVoices();
 speechSynthesis.onvoiceschanged=loadVoices;
 function speak(t){
-  const u = new SpeechSynthesisUtterance(t);
-  u.rate=1.05; u.pitch=0.85;
-  const v = voices.find(v=>v.lang.startsWith('en'));
+  const u=new SpeechSynthesisUtterance(t);
+  u.rate=1.05;
+  u.pitch=0.85;
+  const v=voices.find(v=>v.lang.startsWith('en'));
   if(v) u.voice=v;
   speechSynthesis.speak(u);
 }
-
-// ===== 5. SEND BUTTON =====
 document.getElementById('send').onclick=()=>{
-  const q = input.value.trim();
-  if(!q) return;
-  addMsg(q, 'user');
+  const t=input.value.trim();
+  if(!t)return;
+  add('YOU: '+t,'user');
   input.value='';
-  handleInput(q);
+  askGemini(t);
 };
-
-// ===== 6. LOCAL COMMANDS + SMART ROUTING =====
-function handleInput(q){
-  const low = q.toLowerCase();
-  if(low.includes("time")){
-    const t = new Date().toLocaleTimeString();
-    addMsg("Current time is " + t, 'jarvis'); speak(t); return;
-  }
-  if(low.includes("date")){
-    const d = new Date().toDateString();
-    addMsg("Today is " + d, 'jarvis'); speak(d); return;
-  }
-  if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); addMsg("Opening YouTube, Sir.", 'jarvis'); return; }
-  if(low.includes("google")){ window.open("https://google.com","_blank"); addMsg("Opening Google, Sir.", 'jarvis'); return; }
-  askGemini(q);
+if(clearBtn){
+  clearBtn.onclick=()=>{
+    MEMORY=[];
+    saveMemory();
+    chat.innerHTML='';
+    add('SYSTEM: Memory cleared.','ai');
+  };
 }
-
-// ===== 7. EXTRA + WELCOME =====
-input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
-addMsg("System Online. I am JARVIS, Sir.", 'jarvis');
+function add(t,w){
+  const d=document.createElement('div');
+  d.className='msg '+w;
+  d.innerText=t;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}

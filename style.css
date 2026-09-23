@@ -1,17 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+<style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif}
 body{background:#000;color:#0ff;display:flex;flex-direction:column;min-height:100vh;padding:10px}
-.core{position:relative;width:180px;height:180px;margin:30px auto;}
-.r1,.r2{position:absolute;inset:0;border:2px solid #00ffff;border-radius:50%;box-shadow:0 0 10px #0ff;}
-.r1{border-top-color:transparent;animation:spin 1.5s linear infinite;}
-.r2{inset:15px;border-bottom-color:transparent;animation:spin 2s linear infinite reverse;}
-.center{position:absolute;inset:50px;background:#0ff;border-radius:50%;box-shadow:0 0 20px #0ff;animation:pulse 1.5s infinite;}
-@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.9);opacity:0.7}}
-.core-text{text-align:center;letter-spacing:4px;margin-top:10px}
+h1{text-align:center;font-size:22px;text-shadow:0 0 10px #0ff;line-height:1.2}
+.core{position:relative;width:180px;height:180px;margin:25px auto}
+.r1,.r2{position:absolute;border-radius:50%;border:2px solid #0ff;box-shadow:0 0 10px #0ff}
+.r1{inset:0;border-top-color:transparent;animation:spin 1.2s linear infinite}
+.r2{inset:18px;border-bottom-color:transparent;animation:spin2 1.8s linear infinite reverse}
+.center{position:absolute;inset:55px;background:#0ff;border-radius:50%;box-shadow:0 0 25px #0ff;animation:pulse 1.2s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin2{to{transform:rotate(-360deg)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(0.85)}}
+.core-text{text-align:center;letter-spacing:4px}
 .status{border:1px solid #0ff5;padding:10px;margin-top:20px}
-.row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0}
+.row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0}
 .chat{border:1px solid #0ff5;height:200px;overflow-y:auto;padding:10px;margin-top:10px}
-.input-area{display:flex;gap:10px;margin-top:10px}
-input{flex:1;background:#000;border:1px solid #0ff;color:#0ff;padding:10px}
-button{background:#0ff;color:#000;border:none;padding:10px 15px;font-weight:700}
+.msg{margin:6px 0;padding:6px;border-left:2px solid #0ff;background:rgba(0,255,255,.08);font-size:12px}
+.input-area{display:flex;gap:8px;margin-top:12px}
+input{flex:1;background:#000;border:1px solid #0ff;color:#0ff;padding:12px}
+button{background:#0ff;color:#000;border:none;padding:12px 16px;font-weight:700}
+</style>
+</head>
+<body>
+<h1>J.A.R.V.I.S<br>MOBILE EDITION</h1>
+<div class="core"><div class="r1"></div><div class="r2"></div><div class="center"></div></div>
+<div class="core-text">CORE ACTIVE</div>
+<div class="status">
+<div class="row"><span>AI CORE</span><span>ONLINE</span></div>
+<div class="row"><span>NETWORK</span><span>ONLINE</span></div>
+<div class="row"><span>VOICE</span><span>OFFLINE</span></div>
+<div class="row"><span>MEMORY</span><span>OFF</span></div>
+</div>
+<div class="chat" id="chat"></div>
+<div class="input-area">
+<input id="user-input" placeholder="Ask JARVIS">
+<button id="send">SEND</button>
+<button id="mic">🎤</button>
+</div>
+<script>
+const chat=document.getElementById('chat');
+const input=document.getElementById('user-input');
+const send=document.getElementById('send');
+const mic=document.getElementById('mic');
+let API_KEY=localStorage.getItem('jarvis_key');
+if(!API_KEY){API_KEY=prompt('Gemini API Key dalo (aistudio.google.com se free milti hai):'); if(API_KEY) localStorage.setItem('jarvis_key',API_KEY);}
+async function ask(){
+ let q=input.value.trim(); if(!q) return;
+ chat.innerHTML+=`<div class='msg'>You: ${q}</div>`; input.value='';
+ try{
+  let r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
+  let d=await r.json();
+  let ans=d.candidates?.[0]?.content?.parts?.[0]?.text || 'Key galat hai: '+JSON.stringify(d).slice(0,200);
+  chat.innerHTML+=`<div class='msg'>JARVIS: ${ans}</div>`;
+ }catch(e){chat.innerHTML+=`<div class='msg'>Error: ${e.message}</div>`}
+ chat.scrollTop=chat.scrollHeight;
+}
+send.onclick=ask;
+input.addEventListener('keydown',e=>{if(e.key==='Enter') ask()});
+if(mic){mic.onclick=()=>{let rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)(); rec.lang='en-IN'; rec.start(); rec.onresult=e=>{input.value=e.results[0][0].transcript; ask();}}}
+</script>
+</body>
+</html>

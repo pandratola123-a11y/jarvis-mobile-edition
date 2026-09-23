@@ -12,7 +12,7 @@ function saveMemory(){
   localStorage.setItem('jarvis_memory', JSON.stringify(MEMORY));
 }
 const chat=document.getElementById('chat');
-const input=document.getElementById('msg');
+const input = document.getElementById('user-input');
 const micBtn=document.getElementById('mic-btn');
 const clearBtn=document.getElementById('clear-btn');
 const camBtn=document.getElementById('cam-btn');

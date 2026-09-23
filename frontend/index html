@@ -32,7 +32,7 @@
 <div class="input-area">
   <input id="msg" placeholder="Ask J.A.R.V.I.S...">
   <button id="send">SEND</button>
-  <button id="mic"></button>
+  <button id="mic">🎤</button>
 </div>
 
 <div id="api-box" style="position:fixed; bottom:10px; left:10px; right:10px; background:#0a0a0a; border:1px solid #00FFFF; padding:15px;">

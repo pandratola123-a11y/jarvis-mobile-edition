@@ -26,7 +26,7 @@ async function callGemini(p){
   let lastErr;
   for(const m of MODELS){
     try{
-      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:contents})});
+      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:contents})});
       const data=await res.json();
       if(data.error){
         lastErr=new Error(data.error.message);
@@ -76,7 +76,7 @@ async function askVision(base64,mime,q){
   let lastErr;
   for(const m of MODELS){
     try{
-      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY, {method:"POST",headers:{"Content-Type":"application/json"}, body:JSON.stringify({contents:[{parts:[{text:q},{inline_data:{mime_type:mime,data:base64}}]}]})});
+      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+API_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{inlineData:{mimeType:mime,data:base64}},{text:q}]}]})});
       const data=await res.json();
       if(data.error){
         lastErr=new Error(data.error.message);

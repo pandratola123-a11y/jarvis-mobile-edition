@@ -8,8 +8,14 @@
 </head>
 <body>
 <header><h1>J.A.R.V.I.S</h1><p>MOBILE EDITION</p></header>
-<div class="core"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="center"></div></div>
+
+<div class="core">
+ <div class="ring r1"></div>
+ <div class="ring r2"></div>
+ <div class="center"></div>
+</div>
 <p class="core-text">CORE ACTIVE</p>
+
 <div class="status">
 <h2>SYSTEM STATUS</h2>
 <div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
@@ -17,15 +23,18 @@
 <div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
 <div class="row"><span>MEMORY</span><b class="off">OFFLINE</b></div>
 </div>
+
 <div class="chat" id="chat"></div>
 <div class="input-area">
 <input id="msg" placeholder="Ask J.A.R.V.I.S...">
 <button id="send">SEND</button>
 </div>
+
 <div style="width:90%;margin:10px auto;display:flex;gap:5px">
-<input id="api-input" style="flex:1" placeholder="AQ. wali key paste karo">
-<button onclick="localStorage.setItem('jarvis_key',document.getElementById('api-input').value);alert('Key Saved!')">SAVE</button>
+<input id="api-key" style="flex:1" placeholder="AQ. wali key yahan paste karo">
+<button onclick="saveKey()">SAVE</button>
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>

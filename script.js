@@ -24,7 +24,7 @@ document.getElementById('send').onclick = async () => {
   add('J.A.R.V.I.S: Processing...','ai');
 
   try{
-    let r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",{
+    let r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",

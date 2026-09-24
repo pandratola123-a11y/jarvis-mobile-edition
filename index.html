@@ -29,7 +29,7 @@ document.getElementById('send').onclick=async()=>{
  let key=localStorage.getItem('k');if(!key){add("JARVIS: Key SAVE karo");return}
  add("JARVIS: Thinking...");
  try{
-  let r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
+  let r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
   let d=await r.json();chat.lastChild.remove();
   if(d.error){add("ERROR: "+d.error.message)}else{add("JARVIS: "+d.candidates[0].content.parts[0].text)}
  }catch(e){chat.lastChild.remove();add("ERROR: "+e.message)}

@@ -4,43 +4,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>J.A.R.V.I.S</title>
-<link rel="stylesheet" href="style.css">
-<meta name="theme-color" content="#00FFFF">
+<style>
+body{margin:0;background:#000;color:#0ff;font-family:monospace;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+.core{position:relative;width:200px;height:200px;margin-top:20px}
+.ring{position:absolute;width:100%;height:100%;border-radius:50%;border:2px solid transparent}
+.r1{border-top-color:#0ff;animation:spin 2s linear infinite}
+.r2{width:75%;height:75%;top:12.5%;left:12.5%;border-right-color:#0ff;animation:spin 1.5s linear infinite reverse}
+.r3{width:50%;height:50%;top:25%;left:25%;border-bottom-color:#0ff;animation:spin 1s linear infinite}
+.center{position:absolute;width:40%;height:40%;top:30%;left:30%;background:#0ff; border-radius:50%;box-shadow:0 0 30px #0ff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.core-text{text-align:center;margin:5px;color:#0ff}
+.chat{width:90%;max-width:400px;height:300px;overflow-y:auto;border:1px solid #0ff3;margin-top:15px;padding:10px}
+.msg{margin:5px 0}
+.input-area{display:flex;width:90%;max-width:400px;margin-top:10px;gap:5px}
+input{flex:1;background:#111;color:#0ff;border:1px solid #0ff;padding:8px}
+button{background:#0ff;color:#000;border:none;padding:8px 12px;font-weight:bold}
+</style>
 </head>
 <body>
 <header><h1>J.A.R.V.I.S // MOBILE EDITION</h1></header>
-
-<div class="core">
-<div class="ring r1"></div>
-<div class="ring r2"></div>
-<div class="ring r3"></div>
-<div class="center"></div>
-</div>
+<div class="core"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="center"></div></div>
 <p class="core-text">CORE ACTIVE</p>
-
-<div class="status">
-SYSTEM STATUS
-<div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
-<div class="row"><span>NETWORK</span><b class="on">ONLINE</b></div>
-<div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
-<div class="row"><span>MEMORY</span><b class="off">OFF</b></div>
-</div>
-
+<div class="status">SYSTEM STATUS<br>AI CORE: <b>ONLINE</b><br>NETWORK: <b>ONLINE</b><br>VOICE: <b>OFFLINE</b><br>MEMORY: <b>OFF</b></div>
 <div class="chat" id="chat"></div>
-
 <div class="input-area">
 <input id="user-input" placeholder="Ask J.A.R.V.I.S...">
 <button id="send">SEND</button>
 <button id="mic">🎤</button>
 </div>
+<div style="margin-top:10px"><input id="api-input" type="text" placeholder="API Key Daalo" style="width:250px"><button onclick="saveKey()">save</button></div>
+<script>
+const chat=document.getElementById('chat');
+const input=document.getElementById('user-input');
+const mic=document.getElementById('mic');
+const send=document.getElementById('send');
+function saveKey(){localStorage.setItem('jarvis_key', document.getElementById('api-input').value); chat.innerHTML+=`<div class='msg'>Key Save Ho Gayi</div>`}
+async function ask(){
+  let q=input.value; if(!q) return;
+  chat.innerHTML+=`<div class='msg'>YOU: ${q}</div>`; input.value='';
+  let key=localStorage.getItem('jarvis_key');
+  if(!key){chat.innerHTML+=`<div class='msg'>JARVIS: Pehle API Key Daalo</div>`; return;}
+  try{
+    let res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
+    let data=await res.json();
+    let ans=data.candidates?.[0]?.content?.parts?.[0]?.text || 'No Reply';
+    chat.innerHTML+=`<div class='msg'>JARVIS: ${ans}</div>`; chat.scrollTop=chat.scrollHeight;
+  }catch(e){chat.innerHTML+=`<div class='msg'>Error: ${e.message}</div>`}
+}
+send.onclick=ask;
+input.onkeypress=e=>{if(e.key==='Enter') ask()};
 
-<div id="api-box" style="position:fixed;bottom:90px;left:10px;right:10px;background:#0a0a0a;border:1px solid #00FFFF;padding:15px;border-radius:12px;z-index:9999;display:none;">
-<p style="color:#00FFFF;margin:0 0 10px 0;font-weight:bold;">🔑 API Key Daalo</p>
-<input id="api-input" type="text" placeholder="AIza..." style="width:100%;padding:10px;border-radius:6px;background:#111;color:#fff;border:1px solid #333;">
-<button onclick="saveKey()" style="margin-top:10px;width:100%;padding:10px;background:#00FFFF;border:none;border-radius:6px;font-weight:bold;">SAVE</button>
-<p style="color:#666;font-size:11px;margin-top:6px;">aistudio.google.com/app/apikey se lo</p>
-</div>
-
-<script src="script.js"></script>
+if(mic){
+  mic.onclick = () => {
+    try{
+      let SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ chat.innerHTML+=`<div class='msg'>JARVIS: Is browser me Mic support nahi hai. Chrome use karo.</div>`; return; }
+      let rec = new SR(); rec.lang='en-IN';
+      chat.innerHTML+=`<div class='msg'>JARVIS: Sun raha hu... bolo</div>`;
+      rec.start();
+      rec.onresult = e => { input.value = e.results[0][0].transcript; ask(); };
+      rec.onerror = e => { chat.innerHTML+=`<div class='msg'>Mic Error: ${e.error}</div>`; };
+    }catch(err){ chat.innerHTML+=`<div class='msg'>Error: ${err.message}</div>`; }
+  }
+}
+</script>
 </body>
 </html>

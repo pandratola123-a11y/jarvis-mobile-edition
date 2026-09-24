@@ -1,56 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>J.A.R.V.I.S</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>J.A.R.V.I.S // MOBILE EDITION</header>
+<header><h1>J.A.R.V.I.S</h1><p>MOBILE EDITION</p></header>
 <div class="core"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="center"></div></div>
-<div class="core-text">CORE ACTIVE</div>
+<p class="core-text">CORE ACTIVE</p>
 <div class="status">
-<div class="row">AI CORE: <span class="on">ONLINE</span></div>
-<div class="row">NETWORK: <span class="on">ONLINE</span></div>
-<div class="row">VOICE: <span class="off" id="v-stat">OFFLINE</span></div>
-<div class="row">MEMORY: <span class="off">OFF</span></div>
+<h2>SYSTEM STATUS</h2>
+<div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
+<div class="row"><span>NETWORK</span><b class="on">ONLINE</b></div>
+<div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
+<div class="row"><span>MEMORY</span><b class="off">OFFLINE</b></div>
 </div>
 <div class="chat" id="chat"></div>
 <div class="input-area">
-<input id="user-input" placeholder="Ask JARVIS">
+<input id="msg" placeholder="Ask J.A.R.V.I.S...">
 <button id="send">SEND</button>
-<button id="mic">🎤</button>
 </div>
-<div style="margin-top:10px;display:flex;gap:5px;width:95%;max-width:500px">
-<input id="api-input" style="flex:1;background:#000;color:#0ff;border:1px solid #0ff;padding:10px" placeholder="AIza... wali Key">
-<button onclick="localStorage.setItem('jarvis_key',document.getElementById('api-input').value);alert('Key Saved')">save</button>
+<div style="width:90%;margin:10px auto;display:flex;gap:5px">
+<input id="api-input" style="flex:1" placeholder="AQ. wali key paste karo">
+<button onclick="localStorage.setItem('jarvis_key',document.getElementById('api-input').value);alert('Key Saved!')">SAVE</button>
 </div>
-<script>
-const chat=document.getElementById('chat'), inp=document.getElementById('user-input');
-async function ask(){
- let q=inp.value.trim(); if(!q) return;
- chat.innerHTML+=`<div>YOU: ${q}</div>`; inp.value='';
- let key=localStorage.getItem('jarvis_key'); if(!key){chat.innerHTML+=`<div>JARVIS: Key daalo (aistudio.google.com se)</div>`;return}
- try{
-  let r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
-  let d=await r.json(); console.log(d);
-  if(d.error){chat.innerHTML+=`<div>Error: ${d.error.message}</div>`;return}
-  let ans=d.candidates?.[0]?.content?.parts?.[0]?.text||'No Reply';
-  chat.innerHTML+=`<div>JARVIS: ${ans}</div>`;
- }catch(e){chat.innerHTML+=`<div>Error: ${e.message}</div>`}
- chat.scrollTop=chat.scrollHeight;
-}
-document.getElementById('send').onclick=ask;
-inp.addEventListener('keydown',e=>{if(e.key==='Enter') ask()});
-document.getElementById('mic').onclick=()=>{
- let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SR){alert('Chrome me kholo');return}
- let rec=new SR(); rec.lang='hi-IN'; rec.start();
- document.getElementById('v-stat').innerText='LISTENING';
- rec.onresult=e=>{inp.value=e.results[0][0].transcript; ask()};
- rec.onend=()=>{document.getElementById('v-stat').innerText='OFFLINE'};
-}
-</script>
+<script src="script.js"></script>
 </body>
 </html>

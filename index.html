@@ -1,40 +1,37 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S</title>
-<link rel="stylesheet" href="style.css">
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>JARVIS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron'}body{background:#000;color:#0ff;padding:15px}
+h1{text-align:center;letter-spacing:5px;text-shadow:0 0 10px #0ff}.core{width:140px;height:140px;margin:20px auto;position:relative}
+.ring{position:absolute;border:2px solid #0ff;border-radius:50%}.r1{inset:0;border-top-color:transparent;animation:spin 2s linear infinite}
+.r2{inset:10px;border-bottom-color:transparent;animation:spin 1.5s linear infinite reverse}
+.center{inset:35px;position:absolute;background:#0ff;border-radius:50%;box-shadow:0 0 20px #0ff}
+@keyframes spin{to{transform:rotate(360deg)}}.box{border:1px solid #0ff3;padding:10px;margin:10px 0;font-size:12px}
+input{width:68%;background:#000;border:1px solid #0ff;color:#0ff;padding:10px}button{background:#0ff;color:#000;border:none;padding:10px 15px;font-weight:bold}
+.chat{height:200px;overflow:auto;border:1px solid #0ff3;padding:8px}
+.chat div{margin:5px 0;padding:5px;border-left:2px solid #0ff;background:#0ff1}
+</style></head>
 <body>
-<header><h1>J.A.R.V.I.S</h1><p>MOBILE EDITION</p></header>
-
-<div class="core">
- <div class="ring r1"></div>
- <div class="ring r2"></div>
- <div class="center"></div>
-</div>
-<p class="core-text">CORE ACTIVE</p>
-
-<div class="status">
-<h2>SYSTEM STATUS</h2>
-<div class="row"><span>AI CORE</span><b class="on">ONLINE</b></div>
-<div class="row"><span>NETWORK</span><b class="on">ONLINE</b></div>
-<div class="row"><span>VOICE</span><b class="off">OFFLINE</b></div>
-<div class="row"><span>MEMORY</span><b class="off">OFFLINE</b></div>
-</div>
-
+<h1>J.A.R.V.I.S</h1><div class="core"><div class="ring r1"></div><div class="ring r2"></div><div class="center"></div></div>
+<div class="box">AI CORE <b style="color:#0f0;float:right">ONLINE</b></div>
 <div class="chat" id="chat"></div>
-<div class="input-area">
-<input id="msg" placeholder="Ask J.A.R.V.I.S...">
-<button id="send">SEND</button>
-</div>
-
-<div style="width:90%;margin:10px auto;display:flex;gap:5px">
-<input id="api-key" style="flex:1" placeholder="AQ. wali key yahan paste karo">
-<button onclick="saveKey()">SAVE</button>
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
+<div style="margin-top:10px"><input id="msg" placeholder="Ask JARVIS..."><button id="send">SEND</button></div>
+<div style="margin-top:10px"><input id="key" placeholder="AQ. wali key paste karo"><button onclick="save()">SAVE</button></div>
+<script>
+const chat=document.getElementById('chat');
+function add(t){let d=document.createElement('div');d.innerText=t;chat.appendChild(d);chat.scrollTop=9999}
+function save(){localStorage.setItem('k',document.getElementById('key').value.trim());add("JARVIS: Key Saved, Brain Connected");}
+document.getElementById('send').onclick=async()=>{
+ let q=document.getElementById('msg').value.trim();if(!q)return;
+ add("YOU: "+q);document.getElementById('msg').value='';
+ let key=localStorage.getItem('k');if(!key){add("JARVIS: Key SAVE karo");return}
+ add("JARVIS: Thinking...");
+ try{
+  let r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify({contents:[{parts:[{text:q}]}]})});
+  let d=await r.json();chat.lastChild.remove();
+  if(d.error){add("ERROR: "+d.error.message)}else{add("JARVIS: "+d.candidates[0].content.parts[0].text)}
+ }catch(e){chat.lastChild.remove();add("ERROR: "+e.message)}
+}
+</script></body></html>

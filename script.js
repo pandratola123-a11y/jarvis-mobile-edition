@@ -1,37 +1,46 @@
 const chat = document.getElementById('chat');
-const msgInput = document.getElementById('msg');
-const sendBtn = document.getElementById('send');
+const input = document.getElementById('msg');
 
-async function askJarvis(){
-  let q = msgInput.value.trim();
+function add(txt, who='jarvis'){
+  let d = document.createElement('div');
+  d.className = who;
+  d.innerHTML = `<b>${who==='user'?'YOU':'J.A.R.V.I.S'}:</b> ${txt}`;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+document.getElementById('send').onclick = async () => {
+  const q = input.value.trim();
   if(!q) return;
-  chat.innerHTML += `<div><b>YOU:</b> ${q}</div>`;
-  msgInput.value = '';
+  add(q,'user');
+  input.value = '';
+
   let key = localStorage.getItem('jarvis_key');
-  if(!key){ chat.innerHTML += `<div>JARVIS: Pehle AQ wali key SAVE karo</div>`; return; }
-  chat.innerHTML += `<div id="thinking"><i>Thinking...</i></div>`;
+  if(!key){
+    add('Pehle AQ. wali key SAVE karo');
+    return;
+  }
+
+  add('J.A.R.V.I.S: Processing...','ai');
+
   try{
-    let r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",{
+    let r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
         "x-goog-api-key": key
       },
-      body: JSON.stringify({contents:[{parts:[{text:q}]}]})
+      body: JSON.stringify({contents:[{parts:[{text: q}]}]})
     });
-    let d = await r.json();
-    document.getElementById('thinking')?.remove();
-    if(d.error){
-      chat.innerHTML += `<div><b>ERROR:</b> ${d.error.message}</div>`;
+    let data = await r.json();
+    chat.lastChild.remove();
+    if(data.error){
+      add('ERROR: ' + data.error.message);
     } else {
-      let ans = d.candidates?.[0]?.content?.parts?.[0]?.text || "No Reply";
-      chat.innerHTML += `<div><b>JARVIS:</b> ${ans}</div>`;
+      add(data.candidates[0].content.parts[0].text);
     }
-  } catch(e){
-    document.getElementById('thinking')?.remove();
-    chat.innerHTML += `<div><b>ERROR:</b> ${e.message}</div>`;
+  }catch(e){
+    chat.lastChild.remove();
+    add('ERROR: ' + e.message);
   }
-  chat.scrollTop = chat.scrollHeight;
-}
-sendBtn.onclick = askJarvis;
-msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter') askJarvis() });
+};

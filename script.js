@@ -61,7 +61,7 @@ if(SR){
     rec.start();
     micBtn.innerText = 'LISTENING....';
   };
-  rec.onend = ()=>{ micBtn.innerText = 'ðŸŽ¤'; };
+  rec.onend = ()=>{ micBtn.innerText = '🎤'; };
 }
 
 // ===== 4. VOICE =====

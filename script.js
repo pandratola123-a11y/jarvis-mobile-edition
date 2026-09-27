@@ -1,5 +1,5 @@
  // ===== 1. SETUP =====
-const MINI_API_KEY = "TUMHARI_MINI_API_KEY_YAHAN_DALO";
+const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
@@ -22,7 +22,7 @@ async function askGemini(q){
   if(!q) return;
   const thinking = addMsg("Thinking...", 'jarvis');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${MINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text: q}]}]})

@@ -1,9 +1,10 @@
  // ===== 1. SETUP =====
-const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
+const MINI_API_KEY = "TUMHARI_MINI_API_KEY_YAHAN_DALO";
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
 const micBtn = document.getElementById('mic');
+
 function addMsg(text, who){
   const div = document.createElement('div');
   div.style.margin="10px"; div.style.padding="10px";
@@ -21,7 +22,7 @@ async function askGemini(q){
   if(!q) return;
   const thinking = addMsg("Thinking...", 'jarvis');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${MINI_API_KEY}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text: q}]}]})
@@ -50,7 +51,7 @@ if(SR){
     rec.start();
     micBtn.innerText = 'LISTENING....';
   };
-  rec.onend = ()=>{ micBtn.innerText = '🎤'; };
+  rec.onend = ()=>{ micBtn.innerText = 'ðŸŽ¤'; };
 }
 
 // ===== 4. VOICE =====
@@ -67,13 +68,30 @@ function speak(t){
 }
 
 // ===== 5. SEND BUTTON =====
-sendBtn.onclick=()=>{
+document.getElementById('send').onclick=()=>{
   const q = input.value.trim();
   if(!q) return;
   addMsg(q, 'user');
   input.value='';
   handleInput(q);
 };
-input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
 
-// ===== 6. LOCAL COMMANDS + SMART
+// ===== 6. LOCAL COMMANDS + SMART ROUTING =====
+function handleInput(q){
+  const low = q.toLowerCase();
+  if(low.includes("time")){
+    const t = new Date().toLocaleTimeString();
+    addMsg("Current time is " + t, 'jarvis'); speak(t); return;
+  }
+  if(low.includes("date")){
+    const d = new Date().toDateString();
+    addMsg("Today is " + d, 'jarvis'); speak(d); return;
+  }
+  if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); addMsg("Opening YouTube, Sir.", 'jarvis'); return; }
+  if(low.includes("google")){ window.open("https://google.com","_blank"); addMsg("Opening Google, Sir.", 'jarvis'); return; }
+  askGemini(q);
+}
+
+// ===== 7. EXTRA + WELCOME =====
+input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
+addMsg("System Online. I am JARVIS, Sir.", 'jarvis');

@@ -1,46 +1,79 @@
+ // ===== 1. SETUP =====
+const GEMINI_API_KEY = "TUMHARI_GEMINI_API_KEY_YAHAN_DALO";
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
-
-function add(txt, who='jarvis'){
-  let d = document.createElement('div');
-  d.className = who;
-  d.innerHTML = `<b>${who==='user'?'YOU':'J.A.R.V.I.S'}:</b> ${txt}`;
-  chat.appendChild(d);
+const sendBtn = document.getElementById('send');
+const micBtn = document.getElementById('mic');
+function addMsg(text, who){
+  const div = document.createElement('div');
+  div.style.margin="10px"; div.style.padding="10px";
+  div.style.borderRadius="8px";
+  div.style.border="1px solid #00ffff";
+  div.style.color = who==='user'? '#fff' : '#00ffff';
+  div.innerText = (who==='user'? 'YOU: ' : 'J.A.R.V.I.S: ') + text;
+  chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+  return div;
 }
 
-document.getElementById('send').onclick = async () => {
-  const q = input.value.trim();
+// ===== 2. ASK GEMINI =====
+async function askGemini(q){
   if(!q) return;
-  add(q,'user');
-  input.value = '';
-
-  let key = localStorage.getItem('jarvis_key');
-  if(!key){
-    add('Pehle AQ. wali key SAVE karo');
-    return;
-  }
-
-  add('J.A.R.V.I.S: Processing...','ai');
-
+  const thinking = addMsg("Thinking...", 'jarvis');
   try{
-    let r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "x-goog-api-key": key
-      },
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text: q}]}]})
     });
-    let data = await r.json();
-    chat.lastChild.remove();
-    if(data.error){
-      add('ERROR: ' + data.error.message);
-    } else {
-      add(data.candidates[0].content.parts[0].text);
-    }
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const reply = data.candidates[0].content.parts[0].text;
+    thinking.innerText = 'J.A.R.V.I.S: ' + reply;
+    speak(reply);
   }catch(e){
-    chat.lastChild.remove();
-    add('ERROR: ' + e.message);
+    thinking.innerText = 'J.A.R.V.I.S: ERROR - ' + e.message;
   }
+}
+
+// ===== 3. MIC / SPEECH RECOGNITION =====
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SR){
+  const rec = new SR();
+  rec.lang = 'en-US';
+  rec.onresult = (e)=>{
+    const t = e.results[0][0].transcript;
+    addMsg(t, 'user');
+    handleInput(t);
+  };
+  micBtn.onclick = ()=>{
+    rec.start();
+    micBtn.innerText = 'LISTENING....';
+  };
+  rec.onend = ()=>{ micBtn.innerText = '🎤'; };
+}
+
+// ===== 4. VOICE =====
+let voices=[];
+function loadVoices(){ voices=speechSynthesis.getVoices(); }
+loadVoices();
+speechSynthesis.onvoiceschanged=loadVoices;
+function speak(t){
+  const u = new SpeechSynthesisUtterance(t);
+  u.rate=1.05; u.pitch=0.85;
+  const v = voices.find(v=>v.lang.startsWith('en'));
+  if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}
+
+// ===== 5. SEND BUTTON =====
+sendBtn.onclick=()=>{
+  const q = input.value.trim();
+  if(!q) return;
+  addMsg(q, 'user');
+  input.value='';
+  handleInput(q);
 };
+input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
+
+// ===== 6. LOCAL COMMANDS + SMART

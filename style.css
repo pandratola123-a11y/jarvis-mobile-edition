@@ -22,4 +22,4 @@ header p{font-size:10px;letter-spacing:4px;opacity:.6}
 .input-area{display:flex;gap:8px;margin-top:12px}
 .input-area input{flex:1;background:#000;border:1px solid #0ff;color:#0ff;padding:10px}
 .input-area button{background:#0ff;color:#000;border:none;padding:10px 16px;font-weight:bold}
-#api-box{display:none !important;}
+#api-box{display:none !important; height:0 !important; overflow:hidden !important;}

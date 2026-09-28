@@ -1,10 +1,9 @@
+// ---- 1. SETUP ------
 let MINI_API_KEY = localStorage.getItem('JARVIS_KEY');
-function getKey() {
   if (!MINI_API_KEY) {
-    let k = prompt("🔑 Apni Gemini API Key daalo:");
+    const k = prompt(" Gemini API Key daalo:");
     if (k) {
-      MINI_API_KEY = k.trim();
-      localStorage.setItem('JARVIS_KEY', MINI_API_KEY);
+      localStorage.setItem('JARVIS_KEY', k.trim()); location.reload(); }
     }
   }
   return MINI_API_KEY;

@@ -5,9 +5,7 @@ let MINI_API_KEY = localStorage.getItem('JARVIS_KEY');
     if (k) {
       localStorage.setItem('JARVIS_KEY', k.trim()); location.reload(); }
     }
-  }
-  return MINI_API_KEY;
-}
+
 getKey();
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');

@@ -1,11 +1,14 @@
-// ---- 1. SETUP ------
-let MINI_API_KEY = localStorage.getItem('JARVIS_KEY');
-  if (!MINI_API_KEY) {
-    const k = prompt(" Gemini API Key daalo:");
+let GEMINI_API_KEY = localStorage.getItem('JARVIS_KEY');
+function getKey() {
+  if (!GEMINI_API_KEY) {
+    let k = prompt("🔑 Apni Gemini API Key daalo:");
     if (k) {
-      localStorage.setItem('JARVIS_KEY', k.trim()); location.reload(); }
+      GEMINI_API_KEY = k.trim();
+      localStorage.setItem('JARVIS_KEY', GEMINI_API_KEY);
     }
-
+  }
+  return GEMINI_API_KEY;
+}
 getKey();
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');

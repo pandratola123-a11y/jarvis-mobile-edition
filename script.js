@@ -1,11 +1,11 @@
  // ===== 1. API KEY =====
-let MINI_API_KEY = localStorage.getItem('JARVIS_KEY');
+let GEMINI_API_KEY = localStorage.getItem('JARVIS_KEY');
 function getKey() {
-  if (!MINI_API_KEY) {
+  if (!GEMINI_API_KEY) {
     let k = prompt("🔑 Apni Gemini API Key daalo:");
     if (k) {
       GEMINI_API_KEY = k.trim();
-      localStorage.setItem('JARVIS_KEY', MINI_API_KEY);
+      localStorage.setItem('JARVIS_KEY', GEMINI_API_KEY);
     }
   }
   return GEMINI_API_KEY;

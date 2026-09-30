@@ -1,5 +1,5 @@
-// ===== 1. API KEY =====
-let GEMIN bczI_API_KEY = localStorage.getItem('JARVIS_KEY');
+ // ===== 1. API KEY =====
+let GEMINI_API_KEY = localStorage.getItem('JARVIS_KEY');
 function getKey() {
   if (!GEMINI_API_KEY) {
     let k = prompt("🔑 Apni Gemini API Key daalo:");
@@ -15,25 +15,21 @@ const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
 const micBtn = document.getElementById('mic');
+const clearBtn = document.getElementById('clear');
+const camBtn = document.getElementById('cam');
+const imgInput = document.getElementById('imgInput');
 
-function addMsg(text, who){
-  const div = document.createElement('div');
-  div.style.margin="10px"; div.style.padding="10px";
-  div.style.borderRadius="8px";
-  div.style.border="1px solid #00ffff";
-  div.style.color = who==='user'? '#fff' : '#00ffff';
-  div.innerText = (who==='user'? 'YOU: ' : 'J.A.R.V.I.S: ') + text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-  return div;
-}
+const MODELS = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-pro"];
+
+function add(t,w){const d=document.createElement('div');d.className='msg '+w;d.innerText=t;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
 
 // ===== 2. ASK GEMINI =====
 async function askGemini(q){
   if(!q) return;
-  const thinking = addMsg("Thinking...", 'jarvis');
+  const key = getKey();
+  const thinking = add('J.A.R.V.I.S: Thinking...','ai');
   try{
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-leatest:generateContent?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: q }] }] })
@@ -55,8 +51,8 @@ if(SR){
   rec.lang = 'en-US';
   rec.onresult = (e)=>{
     const t = e.results[0][0].transcript;
-    addMsg(t, 'user');
-    handleInput(t);
+    add(t, 'user');
+    askGemini(t);
   };
   micBtn.onclick = ()=>{
     rec.start();
@@ -65,44 +61,51 @@ if(SR){
   rec.onend = ()=>{ micBtn.innerText = '🎤'; };
 }
 
-// ===== 4. VOICE =====
+ // ===== 4. VOICE =====
 let voices=[];
 function loadVoices(){ voices=speechSynthesis.getVoices(); }
 loadVoices();
 speechSynthesis.onvoiceschanged=loadVoices;
 function speak(t){
+  speechSynthesis.cancel(); // purani voice ko rok do
   const u = new SpeechSynthesisUtterance(t);
   u.rate=1.05; u.pitch=0.85;
-  const v = voices.find(v=>v.lang.startsWith('en'));
+  const v = voices.find(v=>v.lang.includes('en-IN')) || voices.find(v=>v.lang.startsWith('en'));
   if(v) u.voice=v;
   speechSynthesis.speak(u);
 }
 
-// ===== 5. SEND BUTTON =====
-document.getElementById('send').onclick=()=>{
+ // ===== 5. SEND BUTTON + ENTER KEY =====
+sendBtn.onclick=()=>{
   const q = input.value.trim();
   if(!q) return;
-  addMsg(q, 'user');
+  add(q, 'user');
   input.value='';
-  handleInput(q);
+  askGemini(q);
 };
+
+input.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    sendBtn.onclick();
+  }
+});
 
 // ===== 6. LOCAL COMMANDS + SMART ROUTING =====
 function handleInput(q){
   const low = q.toLowerCase();
   if(low.includes("time")){
     const t = new Date().toLocaleTimeString();
-    addMsg("Current time is " + t, 'jarvis'); speak(t); return;
+    add("Current time is " + t, 'ai'); speak(t); return;
   }
   if(low.includes("date")){
     const d = new Date().toDateString();
-    addMsg("Today is " + d, 'jarvis'); speak(d); return;
+    add("Today is " + d, 'ai'); speak(t); return;
   }
-  if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); addMsg("Opening YouTube, Sir.", 'jarvis'); return; }
-  if(low.includes("google")){ window.open("https://google.com","_blank"); addMsg("Opening Google, Sir.", 'jarvis'); return; }
+  if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); add("Opening YouTube, Sir.", 'ai'); return; }
+  if(low.includes("google")){ window.open("https://google.com","_blank"); add("Opening Google, Sir.", 'ai'); return; }
   askGemini(q);
 }
 
 // ===== 7. EXTRA + WELCOME =====
 input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
-addMsg("System Online. I am JARVIS, Sir.", 'jarvis');
+add("System Online. I am JARVIS, Sir. How can I help you?", 'ai');

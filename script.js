@@ -1,11 +1,11 @@
  // ===== 1. API KEY =====
-let GEMINI_API_KEY = localStorage.getItem('JARVIS_KEY');
+let MINI_API_KEY = localStorage.getItem('JARVIS_KEY');
 function getKey() {
-  if (!GEMINI_API_KEY) {
+  if (!MINI_API_KEY) {
     let k = prompt("🔑 Apni Gemini API Key daalo:");
     if (k) {
       GEMINI_API_KEY = k.trim();
-      localStorage.setItem('JARVIS_KEY', GEMINI_API_KEY);
+      localStorage.setItem('JARVIS_KEY', MINI_API_KEY);
     }
   }
   return GEMINI_API_KEY;
@@ -35,7 +35,7 @@ async function askGemini(q){
   const key = getKey();
   const thinking = add("J.A.R.V.I.S. Thinking... ", 'ai');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${key}`,{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${MINI-API-KEY}`,{
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({contents: [{parts: [{text: q}]}]})

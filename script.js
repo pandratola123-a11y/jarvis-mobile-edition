@@ -35,7 +35,7 @@ async function askGemini(q){
   const key = getKey();
   const thinking = add("J.A.R.V.I.S. Thinking... ", 'ai');
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash:generateContent?key=${key}`,{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-3.0-flash:generateContent?key=${key}`,{
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({contents: [{parts: [{text: q}]}]})

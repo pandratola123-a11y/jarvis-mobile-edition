@@ -12,6 +12,14 @@ function getKey() {
 }
 getKey();
 
+// ===== 1.5 MEMORY & VISION (YE NAYA CODE) =====
+let memory = JSON.parse(localStorage.getItem('jarvis_memory') || "[]");
+let camStream = null;
+function saveMemory(t){
+  memory.push({time: new Date().toLocaleString(), text: t});
+  localStorage.setItem('jarvis_memory', JSON.stringify(memory));
+}
+
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const sendBtn = document.getElementById('send');
@@ -105,6 +113,18 @@ function handleInput(q){
   }
   if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); add("Opening YouTube, Sir.", 'ai'); return; }
   if(low.includes("google")){ window.open("https://google.com","_blank"); add("Opening Google, Sir.", 'ai'); return; }
+
+// ==== NAYA CODE YAHAN SE START ====
+if(low.includes("clear memory")){
+  localStorage.removeItem('jarvis_memory');
+  add("Memory cleared, Sir.", 'ai'); speak("Memory cleared"); return;
+}
+if(low.includes("camera on") || low.includes("vision on")){
+  add("Vision Online, Sir. Camera starting...", 'ai'); 
+  startVision();
+  return;
+}
+ 
   askGemini(q);
 }
 

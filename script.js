@@ -128,12 +128,24 @@ input.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){ sendBtn.click(); }
 });
 
-// ===== 6. LOCAL COMMANDS =====
+ // ===== 6. LOCAL COMMANDS (FINAL FIXED) =====
 function handleInput(q){
   const low = q.toLowerCase();
- checkAndStoreMemory(q);
- let factAns = getAnswer(q);
- if(factAns){add(factAns, 'ai');speak(factAns);return;}
+ 
+  let storedMsg = checkAndStoreMemory(q);
+  if(storedMsg){
+    add(storedMsg, 'ai');
+    speak(storedMsg);
+    return;
+  }
+ 
+  let factAns = getAnswer(q);
+  if(factAns){
+    add(factAns, 'ai');
+    speak(factAns);
+    return;
+  }
+
   if(low.includes("time")){
     const t = new Date().toLocaleTimeString();
     add("Current time is " + t, 'ai'); speak(t); return;
@@ -145,15 +157,16 @@ function handleInput(q){
   if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); add("Opening YouTube, Sir.", 'ai'); return; }
   if(low.includes("google")){ window.open("https://google.com","_blank"); add("Opening Google, Sir.", 'ai'); return; }
 
-if(low.includes("clear memory")){
-  localStorage.removeItem('jarvis_memory');
-  add("Memory cleared, Sir.", 'ai'); speak("Memory cleared"); return;
-}
-if(low.includes("camera on") || low.includes("vision on")){
-  add("Vision Online, Sir. Camera starting...", 'ai'); 
-  startVision();
-  return;
-}
+  if(low.includes("clear memory")){
+    localStorage.removeItem('jarvis_memory');
+    localStorage.removeItem('jarvis_facts');
+    add("Memory cleared, Sir. All facts cleared.", 'ai'); speak("Memory cleared"); return;
+  }
+  if(low.includes("camera on") || low.includes("vision on")){
+    add("Vision Online, Sir. Camera starting...", 'ai'); 
+    startVision();
+    return;
+  }
  
   askGemini(q);
 }

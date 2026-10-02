@@ -12,7 +12,7 @@ function getKey() {
 }
 getKey();
 
-  // ===== 1.5 MEMORY & VISION (V4 - ALL FACTS) =====
+ // ===== 1.5 MEMORY & VISION (V4.1 - BUG FIXED) =====
 let memory = JSON.parse(localStorage.getItem('jarvis_memory') || "[]");
 let camStream = null;
 let userFacts = JSON.parse(localStorage.getItem('jarvis_facts') || '{}');
@@ -27,43 +27,35 @@ function saveFacts(){
 }
 function checkAndStoreMemory(text) {
   let low = text.toLowerCase();
+  // Agar sawal hai to bilkul yaad mat karo
+  if(low.includes('kya hai') || low.includes('kaun sa') || low.includes('konsa') || low.includes('batao') || low.includes('?')){
+    return null;
+  }
   let original = text.trim();
-  
-  // Pattern 1: my favourite bike is Duke 390 / mera favourite bike Duke 390 hai
   let m1 = original.match(/(?:my|mera)\s+(?:favourite|favorite|pasandida)\s+(.+?)\s+(?:is\s+)?(.+?)\s*(?:hai)?$/i);
   if(m1){
-    let key = m1[1].toLowerCase().replace(/kaun sa|konsa|\?/g,'').trim(); // bike, color
-    let value = m1[2].trim(); // Duke 390, Orange
-    if(value.toLowerCase() !== 'kaun sa hai' && value.length > 1){
+    let key = m1[1].toLowerCase().replace(/kaun sa|konsa|\?/g,'').trim();
+    let value = m1[2].trim();
+    if(value.length > 1 && value.toLowerCase() !== 'hai'){
       userFacts[key] = value;
       saveFacts();
       return `Got it Sir! Aapka favourite ${key} ${value} hai. Yaad rakh liya.`;
     }
   }
-  
-  // Pattern 2: Mera favourite color Orange hai -> special
   let m2 = original.match(/favourite\s+(\w+)\s+(.+?)\s+hai/i);
   if(m2){
     let key = m2[1].toLowerCase().trim();
     let value = m2[2].trim();
+    if(value.toLowerCase().includes('kya')) return null;
     userFacts[key] = value;
     saveFacts();
     return `Samajh gaya Sir! Aapka favourite ${key} ${value} hai.`;
   }
-
-  // Pattern 3: Mujhe Orange pasand hai / mujhe Duke 390 pasand hai
   if(low.includes('pasand hai')){
     let value = original.replace(/mujhe/i,'').replace(/pasand hai/i,'').trim();
-    // agar "Orange color" bola to key = color
     if(value.toLowerCase().includes('color') || value.toLowerCase().includes('colour')){
-      userFacts['color'] = value.replace(/color|colour/i,'').trim();
-      saveFacts();
-      return `Samajh gaya Sir! Aapka favourite color ${userFacts['color']} hai.`;
-    }
-    if(value.toLowerCase().includes('bike')){
-      userFacts['bike'] = value.replace(/bike/i,'').trim();
-      saveFacts();
-      return `Samajh gaya Sir! Aapki favourite bike ${userFacts['bike']} hai.`;
+      let v = value.replace(/color|colour/i,'').trim();
+      if(v) { userFacts['color'] = v; saveFacts(); return `Samajh gaya Sir! Aapka favourite color ${v} hai.`; }
     }
   }
   return null;
@@ -71,21 +63,16 @@ function checkAndStoreMemory(text) {
 
 function getAnswer(text) {
   let low = text.toLowerCase();
-  // koi bhi favourite poocha to facts me dhoondo
   for(let key in userFacts){
     if(low.includes(key)){
       return `Aapka favourite ${key} ${userFacts[key]} hai Sir! Aapne hi bataya tha.`;
     }
   }
-  if(low.includes('colour') || low.includes('color') || low.includes('rang')){
-    if(userFacts['color'] || userFacts['colour']){
-      return `Aapka favourite color ${userFacts['color'] || userFacts['colour']} hai Sir!`;
-    }
+  if((low.includes('colour') || low.includes('color') || low.includes('rang')) && (userFacts['color'] || userFacts['colour'])){
+    return `Aapka favourite color ${userFacts['color'] || userFacts['colour']} hai Sir!`;
   }
-  if(low.includes('bike')){
-    if(userFacts['bike']){
-      return `Aapki favourite bike ${userFacts['bike']} hai Sir!`;
-    }
+  if(low.includes('bike') && userFacts['bike']){
+    return `Aapki favourite bike ${userFacts['bike']} hai Sir!`;
   }
   return null;
 }
@@ -105,7 +92,6 @@ function add(t,w){
   chat.scrollTop=chat.scrollHeight;
   return d;
 }
-
 // ===== 2. ASK GEMINI =====
 async function askGemini(q){
   if(!q) return;
@@ -169,21 +155,23 @@ input.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){ sendBtn.click(); }
 });
 
- // ===== 6. LOCAL COMMANDS (FINAL FIXED) =====
+  // ===== 6. LOCAL COMMANDS (V4.1 - FIXED ORDER) =====
 function handleInput(q){
   const low = q.toLowerCase();
- 
-  let storedMsg = checkAndStoreMemory(q);
-  if(storedMsg){
-    add(storedMsg, 'ai');
-    speak(storedMsg);
-    return;
-  }
- 
+
+  // PEHLE jawab do agar yaad hai toh
   let factAns = getAnswer(q);
   if(factAns){
     add(factAns, 'ai');
     speak(factAns);
+    return;
+  }
+
+  // FIR naya yaad karo
+  let storedMsg = checkAndStoreMemory(q);
+  if(storedMsg){
+    add(storedMsg, 'ai');
+    speak(storedMsg);
     return;
   }
 
@@ -208,7 +196,6 @@ function handleInput(q){
     startVision();
     return;
   }
- 
   askGemini(q);
 }
 

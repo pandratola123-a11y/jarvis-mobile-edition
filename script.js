@@ -114,7 +114,6 @@ function handleInput(q){
   if(low.includes("youtube")){ window.open("https://youtube.com","_blank"); add("Opening YouTube, Sir.", 'ai'); return; }
   if(low.includes("google")){ window.open("https://google.com","_blank"); add("Opening Google, Sir.", 'ai'); return; }
 
-// ==== NAYA CODE YAHAN SE START ====
 if(low.includes("clear memory")){
   localStorage.removeItem('jarvis_memory');
   add("Memory cleared, Sir.", 'ai'); speak("Memory cleared"); return;

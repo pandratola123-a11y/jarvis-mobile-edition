@@ -12,12 +12,38 @@ function getKey() {
 }
 getKey();
 
-// ===== 1.5 MEMORY & VISION (YE NAYA CODE) =====
+// ===== 1.5 MEMORY & VISION (SUPER FINAL) =====
 let memory = JSON.parse(localStorage.getItem('jarvis_memory') || "[]");
 let camStream = null;
+let userFacts = JSON.parse(localStorage.getItem('jarvis_facts') || '{}');
+
 function saveMemory(t){
   memory.push({time: new Date().toLocaleString(), text: t});
   localStorage.setItem('jarvis_memory', JSON.stringify(memory));
+}
+function saveFacts(){
+  localStorage.setItem('jarvis_facts', JSON.stringify(userFacts));
+}
+function checkAndStoreMemory(text) {
+  text = text.toLowerCase();
+  if (text.includes('favourite colour is') || text.includes('favorite color is')) {
+    let color = text.split('is')[1].trim();
+    userFacts.favColor = color;
+    saveFacts();
+    return true;
+  }
+  return false;
+}
+function getAnswer(text) {
+  text = text.toLowerCase();
+  if (text.includes('favourite colour') || text.includes('favorite color')) {
+    if (userFacts.favColor) {
+      return `Your favourite colour is ${userFacts.favColor}, Sir. I will never forget it.`;
+    } else {
+      return `You haven't told me yet, Sir.`;
+    }
+  }
+  return null;
 }
 
 const chat = document.getElementById('chat');
@@ -35,7 +61,7 @@ function add(t,w){
   chat.appendChild(d);
   chat.scrollTop=chat.scrollHeight;
   return d;
-}
+} 
 
 // ===== 2. ASK GEMINI =====
 async function askGemini(q){

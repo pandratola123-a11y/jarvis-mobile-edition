@@ -129,6 +129,9 @@ input.addEventListener('keydown', (e)=>{
 // ===== 6. LOCAL COMMANDS =====
 function handleInput(q){
   const low = q.toLowerCase();
+ checkAndStoreMemory(q);
+ let factAns = getAnswer(q);
+ if(factAns){add(factAns, 'ai');speak(factAns);return;}
   if(low.includes("time")){
     const t = new Date().toLocaleTimeString();
     add("Current time is " + t, 'ai'); speak(t); return;

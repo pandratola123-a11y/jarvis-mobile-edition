@@ -12,7 +12,7 @@ function getKey() {
 }
 getKey();
 
-// ===== 1.5 MEMORY & VISION (SUPER FINAL) =====
+ // ===== 1.5 MEMORY & VISION (SUPER FINAL V2 - ALL MEMORY) =====
 let memory = JSON.parse(localStorage.getItem('jarvis_memory') || "[]");
 let camStream = null;
 let userFacts = JSON.parse(localStorage.getItem('jarvis_facts') || '{}');
@@ -25,22 +25,24 @@ function saveFacts(){
   localStorage.setItem('jarvis_facts', JSON.stringify(userFacts));
 }
 function checkAndStoreMemory(text) {
-  text = text.toLowerCase();
-  if (text.includes('favourite colour is') || text.includes('favorite color is')) {
-    let color = text.split('is')[1].trim();
-    userFacts.favColor = color;
+  let low = text.toLowerCase();
+  let match = low.match(/my (?:favourite|favorite) (.+?) is (.+)/);
+  if(match){
+    let key = match[1].trim().replace('my','').trim();
+    let value = text.split(/is/i).pop().trim();
+    userFacts[key] = value;
     saveFacts();
     return true;
   }
   return false;
 }
 function getAnswer(text) {
-  text = text.toLowerCase();
-  if (text.includes('favourite colour') || text.includes('favorite color')) {
-    if (userFacts.favColor) {
-      return `Your favourite colour is ${userFacts.favColor}, Sir. I will never forget it.`;
-    } else {
-      return `You haven't told me yet, Sir.`;
+  let low = text.toLowerCase();
+  let match = low.match(/(?:what|which)(?:.*?)my (?:favourite|favorite) (.+?)\??$/);
+  if(match){
+    let key = match[1].trim().replace('one is','').replace('is','').trim();
+    if(userFacts[key]){
+      return `Your favourite ${key} is ${userFacts[key]}, Sir. I remember it.`;
     }
   }
   return null;
@@ -61,7 +63,7 @@ function add(t,w){
   chat.appendChild(d);
   chat.scrollTop=chat.scrollHeight;
   return d;
-} 
+}
 
 // ===== 2. ASK GEMINI =====
 async function askGemini(q){

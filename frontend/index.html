@@ -1,1 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S</title>
+<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#00FFFF">
+</head>
+<body>
+<header><h1>J.A.R.V.I.S // MOBILE EDITION</h1></header>
 
+<div class="core">
+  <div class="ring r1"></div>
+  <div class="ring r2"></div>
+  <div class="ring r3"></div>
+  <div class="center"></div>
+  <p class="core-text">CORE ACTIVE</p>
+</div>
+
+<div class="status">
+SYSTEM STATUS
+  <div class="row"><span>AI CORE:</span> <b class="on">ONLINE</b></div>
+  <div class="row"><span>NETWORK:</span> <b class="on">ONLINE</b></div>
+  <div class="row"><span>VOICE:</span> <b class="on">ACTIVE</b></div>
+  <div class="row"><span>MEMORY:</span> <b class="on">ACTIVE</b></div>
+</div>
+  
+<video id="camView" autoplay playsinline style="display:none; width:100%; border-radius:12px; margin-bottom:10px;"></video>
+<div class="chat" id="chat"></div>
+
+<div class="input-area">
+  <input id="msg" placeholder="Ask J.A.R.V.I.S...">
+  <button id="send">SEND</button>
+  <button id="mic">🎙️</button>
+  <button id="cam">📷</button>
+  <button id="clear">CLEAR</button>
+  <input type="file" id="img-Input" accept="image/*" hidden>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

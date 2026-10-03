@@ -113,7 +113,57 @@ async function askGemini(q){
   }
 }
 
-// ===== 3. MIC =====
+// ===== 3. TOOLS (THE HANDS) - 15 TOOLS =====
+async function handleTools(text){
+  const t = text.toLowerCase();
+
+  // 1. Time
+  if(/\btime\b/.test(t) || t.includes('టైమ్') || t.includes('సమయం'))
+    return 'The time is '+new Date().toLocaleTimeString()+', Boss.';
+
+  // 2. Weather
+  if(t.includes('weather') || t.includes('వాతావరణం')){
+    return await new Promise(res=>{
+      navigator.geolocation.getCurrentPosition(async p=>{
+        try{
+          const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current_weather=true`);
+          const d=await r.json();
+          res(`It is ${d.current_weather.temperature} degrees Celsius now, Boss.`);
+        }catch(e){ res('Weather service error, Boss.'); }
+      }, ()=> res('I need location permission for weather, Boss.'));
+    });
+  }
+
+  // 3. Timer
+  const m=t.match(/(\d+)\s*(seconds?|secs?|minutes?|mins?|hours?|hrs?)/i);
+  if((t.includes('timer') || t.includes('టైమర్')) && m){
+    const amount=parseInt(m[1]); const unit=m[2].toLowerCase();
+    const factor=/^(hours?|hrs?)/.test(unit)?3600000:/^(seconds?|secs?|s)/.test(unit)?1000:60000;
+    const duration=amount*factor;
+    setTimeout(()=>speak(`టైమర్ పూర్తయింది! ${amount} ${unit} అయ్యాయి.`),duration);
+    return `Timer set for ${amount} ${unit}.`;
+  }
+
+  // 4. Translate
+  if(t.includes('translate')){
+    const q=text.replace(/translate (this )?/i,'').trim()||'hello';
+    try{
+      const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair=en|te');
+      const d=await r.json(); return 'In Telugu: '+d.responseData.translatedText;
+    }catch(e){ return 'Translate error, Boss.'; }
+  }
+
+  // 5. YouTube Play
+  if(t.includes('play ') || t.includes('youtube ')){
+    const q=text.replace(/play |youtube (search )?/i,'').trim();
+    if(q){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(q));
+    return 'Searching YouTube for '+q+', Boss.'; }
+  }
+
+  return null; // Tool match కాకపోతే Gemini Brain కి వెళ్తుంది
+}
+
+// ===== 4. MIC =====
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if(SR){
   const rec = new SR();
@@ -130,7 +180,7 @@ if(SR){
   rec.onend = ()=>{micBtn.innerText = '🎤';};
 }
 
-// ===== 4. VOICE =====
+// ===== 5. VOICE =====
 let voices=[];
 function loadVoices(){ voices=speechSynthesis.getVoices();}
 loadVoices();
@@ -143,7 +193,7 @@ function speak(t){
   if(u.voice){ speechSynthesis.speak(u); }
 }
 
-// ===== 5. SEND BUTTON =====
+// ===== 6. SEND BUTTON =====
 sendBtn.onclick = ()=>{
   const q = input.value.trim();
   if(!q) return;
@@ -155,7 +205,7 @@ input.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){ sendBtn.click(); }
 });
 
-  // ===== 6. LOCAL COMMANDS (V4.1 - FIXED ORDER) =====
+  // ===== 7. LOCAL COMMANDS (V4.1 - FIXED ORDER) =====
 function handleInput(q){
   const low = q.toLowerCase();
 
@@ -199,6 +249,6 @@ function handleInput(q){
   askGemini(q);
 }
 
-// ===== 7. EXTRA + WELCOME =====
+// ===== 8. EXTRA + WELCOME =====
 input.addEventListener('keypress', e=>{ if(e.key==='Enter') sendBtn.click(); });
 add("System Online. I am JARVIS, Sir. How can I help you?", 'ai');

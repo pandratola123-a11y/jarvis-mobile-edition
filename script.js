@@ -15,7 +15,7 @@ if (!API_KEY || API_KEY.trim() === "") {
 const MODELS = [
   "gemini-2.5-flash", 
   "gemini-2.0-flash", 
-  "gemini-2.5-flash-lite"
+  "gemini-3.5-flash-lite"
 ];
 
 // ===== 2. MEMORY & UI ELEMENTS =====

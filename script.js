@@ -1,10 +1,22 @@
- // ===== 1. API KEY =====
+ // ===== 1. API KEY - Secure Version =====
 let API_KEY = localStorage.getItem('jarvis_key');
-if(!API_KEY){
+
+if (!API_KEY || API_KEY.trim() === "") {
   API_KEY = prompt('Enter your Gemini API Key:');
-  if(API_KEY) localStorage.setItem('jarvis_key', API_KEY);
+  if (API_KEY && API_KEY.startsWith('AIza')) {
+    localStorage.setItem('jarvis_key', API_KEY.trim());
+  } else {
+    alert('Invalid API Key! Key AIza se start honi chahiye.');
+    API_KEY = null;
+  }
 }
-const MODELS = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-flash-latest"];
+
+// Latest models (Oct 2026)
+const MODELS = [
+  "gemini-2.5-flash", 
+  "gemini-2.0-flash", 
+  "gemini-2.5-flash-lite"
+];
 
 // ===== 2. MEMORY & UI ELEMENTS =====
 let MEMORY = [];
@@ -49,101 +61,26 @@ function speak(txt){
 MEMORY.forEach(m=> add((m.role==='user'?'YOU: ':'J.A.R.V.I.S: ')+m.text, m.role==='user'?'user':'ai'));
 
 // ===== 3. TOOLS (THE HANDS) =====
-async function fetchToolJson(url, options={}, timeoutMs=10000){
-  const controller = typeof AbortController==='function'? new AbortController() : null;
-  const timeoutId = controller? setTimeout(()=>controller.abort(), timeoutMs) : null;
-  try{
-    const response = await fetch(url, {...options,...(controller?{signal:controller.signal}:{})});
-    return await response.json();
-  } finally {
-    if(timeoutId) clearTimeout(timeoutId);
-  }
-}
+function handleTools(text) {
+  // Timer tool: "set timer for 5 minutes" / "5 minute ka timer laga"
+  const timerMatch = text.match(/(\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?|s)/i);
 
-async function handleTools(text){
-  const t = text.toLowerCase();
+  if (timerMatch) {
+    const amount = parseInt(timerMatch[1]);
+    const unit = timerMatch[2].toLowerCase();
 
-  // Time - English + Telugu
-  if(/\btime\b/.test(t) || t.includes('టైమ్') || t.includes('సమయం') || t.includes('current time')){
-    return 'The time is '+new Date().toLocaleTimeString()+', Boss.';
-  }
+    const factor = /^(hours?|hrs?)/.test(unit)? 3600000
+                 : /^(seconds?|secs?|s)/.test(unit)? 1000
+                 : 60000;
 
-  // Weather
-  if(t.includes('weather') || t.includes('వాతావరణం')){
-    return await new Promise(res=>{
-      if(!navigator.geolocation) return res('Geolocation not supported, Boss.');
-      navigator.geolocation.getCurrentPosition(async p=>{
-        try{
-          const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current_weather=true`);
-          const d=await r.json();
-          res(`It is ${d.current_weather.temperature}°C now, Boss.`);
-        }catch(e){ res('Weather service error, Boss.'); }
-      }, ()=> res('I need location permission for weather, Boss.'));
-    });
-  }
+    const duration = amount * factor;
 
-  // Open YouTube / Google
-  if(/^\s*(?:please\s+)?(?:open\s+youtube|youtube\s+open|youtube)(?:\s+please)?[.!?]?\s*$/i.test(text)){
-    window.open('https://youtube.com','_blank','noopener,noreferrer');
-    return 'Opening YouTube, Boss.';
-  }
-  if(/^\s*(?:please\s+)?(?:open\s+google|google\s+open|google)(?:\s+please)?[.!?]?\s*$/i.test(text)){
-    window.open('https://google.com','_blank','noopener,noreferrer');
-    return 'Opening Google, Boss.';
-  }
+    setTimeout(() => {
+      const msg = `Timer pura ho gaya! ${amount} ${unit} ho gaye.`;
+      add(`J.A.R.V.I.S: ${msg}`, 'ai');
+      speak(msg);
+    }, duration);
 
-  // Open URL
-  const urlCommand = text.match(/^\s*(?:open|visit|go to)\s+(https?:\/\/\S+)\s*$/i);
-  if(urlCommand){
-    try{
-      const destination = new URL(urlCommand[1]);
-      if(destination.protocol!=='https:' && destination.protocol!=='http:') return 'Only http and https links can be opened.';
-      window.open(destination.href,'_blank','noopener,noreferrer');
-      return 'Opening '+destination.hostname+', Boss.';
-    }catch(e){ return 'That link does not look valid.'; }
-  }
-
-  // Google Search
-  const googleSearch = text.match(/^\s*(?:google\s+search|search\s+(?:on\s+)?google)(?:\s+for)?\s+(.+?)\s*$/i);
-  if(googleSearch){
-    const query = googleSearch[1].trim();
-    if(!query) return 'Tell me what to search for on Google.';
-    window.open('https://www.google.com/search?q='+encodeURIComponent(query),'_blank','noopener,noreferrer');
-    return 'Searching Google for '+query+', Boss.';
-  }
-
-  // YouTube Search / Play
-  const playMatch = text.match(/^\s*play\s+(.+?)\s*$/i);
-  const youtubeMatch = text.match(/^\s*youtube(?:\s+search)?(?:\s+for)?\s+(.+?)\s*$/i);
-  const searchYoutubeMatch = text.match(/^\s*search\s+(?:on\s+)?youtube(?:\s+for)?\s+(.+?)\s*$/i);
-  const videoQuery = (playMatch||youtubeMatch||searchYoutubeMatch)?.[1]?.trim();
-  if(videoQuery){
-    window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(videoQuery),'_blank','noopener,noreferrer');
-    return 'Searching YouTube for '+videoQuery+', Boss.';
-  }
-
-  // Wikipedia Search
-  const searchMatch = text.match(/^\s*(?:search|look up)\s+(?:for\s+)?(.+?)\s*$/i);
-  if(searchMatch){
-    const query = searchMatch[1].trim();
-    if(!query) return 'Tell me what to search for.';
-    try{
-      const url='https://en.wikipedia.org/w/api.php?action=query&list=search&srlimit=1&srsearch='+encodeURIComponent(query)+'&format=json&origin=*';
-      const data = await fetchToolJson(url);
-      const result = data?.query?.search?.[0];
-      if(!result) return 'I could not find that, Boss.';
-      const snippet = String(result.snippet||'').replace(/<[^>]*>/g,'').replace(/&#039;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,'&');
-      return 'Wikipedia: '+result.title+' - '+snippet;
-    }catch(e){ return 'Search error, Boss.'; }
-  }
-
-  // Timer (with Telugu)
-  const m = t.match(/(\d+)\s*(seconds?|secs?|minutes?|mins?|hours?|hrs?)/i);
-  if((t.includes('timer') || t.includes('టైమర్')) && m){
-    const amount=parseInt(m[1]); const unit=m[2].toLowerCase();
-    const factor=/^(hours?|hrs?)/.test(unit)?3600000:/^(seconds?|secs?|s)/.test(unit)?1000:60000;
-    const duration=amount*factor;
-    setTimeout(()=>speak(`టైమర్ పూర్తయింది! ${amount} ${unit} అయ్యాయి.`),duration);
     return `Timer set for ${amount} ${unit}.`;
   }
 

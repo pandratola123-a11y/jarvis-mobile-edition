@@ -144,4 +144,43 @@ body.is-thinking .hero-orb .orb-aura{animation-duration:1.2s}
 @keyframes activityIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes settingsIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes tiltOrbit{from{transform:rotateX(66deg) rotateZ(0)}to{transform:rotateX(66deg) rotateZ(360deg)}}
-@keyframes innerOrbit{from{transform:rotateY(68deg) rotateZ(0)}to{transform:rotateY(68deg) r
+@keyframes innerOrbit{from{transform:rotateY(68deg) rotateZ(0)}to{transform:rotateY(68deg) 
+  
+/* ===== MOBILE FIX - PASTE AT VERY END ===== */
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr !important;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+  .main-area {
+    grid-column: 1 !important;
+  }
+  .topbar {
+    left: 0 !important;
+  }
+  .composer-dock {
+    left: 0 !important;
+  }
+  .sidebar-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 999;
+  }
+  .sidebar-backdrop[hidden] {
+    display: none !important;
+  }
+  .conversation-stage {
+    left: 0 !important;
+  }
+  .chat {
+    padding: 15px 16px 20px;
+  }
+}

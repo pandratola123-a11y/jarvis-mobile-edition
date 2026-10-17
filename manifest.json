@@ -1,0 +1,21 @@
+{
+  "name": "J.A.R.V.I.S Personal AI Assistant",
+  "short_name": "JARVIS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "description": "J.A.R.V.I.S personal AI assistant for Vamshi",
+  "icons": [
+    {
+      "src": "jarvis-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "jarvis-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

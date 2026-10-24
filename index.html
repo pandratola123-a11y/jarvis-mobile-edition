@@ -1,40 +1,47 @@
  <!DOCTYPE html>
-<html>
+<html lang="te">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>J.A.R.V.I.S</title>
-<link rel="stylesheet" href="style.css">
-<meta name="theme-color" content="#00FFFF">
+<title>J.A.R.V.I.S - PERSONAL AI ASSISTANT</title>
+<style>
+:root { --cyan: #00f2ff; --bg: #020a12; }
+body { background: var(--bg); color: var(--cyan); font-family: monospace; margin:0; padding:15px; }
+h1 { text-align:center; letter-spacing:5px; }
+#core { border:1px solid var(--cyan); padding:15px; border-radius:10px; max-width:600px; margin:auto; }
+.row { display:flex; gap:10px; align-items:center; }
+#status { text-align:center; color:#ff3b3b; margin:10px 0; font-weight:bold; }
+#chat { min-height:200px; border:1px dashed var(--cyan); padding:10px; margin:15px 0; white-space:pre-wrap; }
+.input-area { display:flex; gap:8px; margin-top:15px; }
+#prompt { flex:1; background:#001a1a; color:var(--cyan); border:1px solid var(--cyan); padding:12px; }
+button { background:var(--cyan); color:#000; border:none; padding:12px 15px; font-weight:bold; cursor:pointer; border-radius:5px; }
+#clear-btn { background:#ff3b3b; color:#fff; }
+#mic-btn.active { background:#00ff00; animation: pulse 1s infinite; }
+@keyframes pulse { 0% { transform:scale(1)} 50% { transform:scale(1.1)} }
+</style>
 </head>
 <body>
-<header><h1>J.A.R.V.I.S // MOBILE EDITION</h1></header>
 
-<div class="core">
-  <div class="ring r1"></div>
-  <div class="ring r2"></div>
-  <div class="ring r3"></div>
-  <div class="center"></div>
-  <p class="core-text">CORE ACTIVE</p>
-</div>
+<h1>J.A.R.V.I.S</h1>
+<div id="core">
+  <div id="status">SYSTEM: STANDBY</div>
+  
+  <div id="chat">Waiting for command...</div>
 
-<div class="status">
-SYSTEM STATUS
-  <div class="row"><span>AI CORE:</span> <b class="on">ONLINE</b></div>
-  <div class="row"><span>NETWORK:</span> <b class="on">ONLINE</b></div>
-  <div class="row"><span>VOICE:</span> <b class="on">ONLINE</b></div>
-  <div class="row"><span>MEMORY:</span> <b class="off">OFF</b></div>
-</div>
+  <div class="input-area">
+    <input id="prompt" type="text" placeholder="Enter a command for J.A.R.V.I.S..." />
+  </div>
 
-<div class="chat" id="chat"></div>
+  <div class="row" style="margin-top:10px;">
+    <button id="send-btn">EXECUTE</button>
+    <button id="mic-btn" aria-label="Activate voice input">🎤 MIC</button>
+    <button id="img-btn" aria-label="Analyze image">🖼️ IMG</button>
+    <button id="clear-btn">CLEAR</button>
+  </div>
 
-<div class="input-area">
-  <input id="msg" placeholder="Ask J.A.R.V.I.S...">
-  <button id="send">SEND</button>
-  <button id="mic">🎙️</button>
-  <button id="cam">📷</button>
-  <button id="clear">CLEAR</button>
-  <input type="file" id="img-Input" accept="image/*" hidden>
+  <!-- Hidden Image Input -->
+  <input id="img-input" type="file" accept="image/*" style="display:none" />
+
 </div>
 
 <script src="script.js"></script>

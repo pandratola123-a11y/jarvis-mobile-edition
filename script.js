@@ -58,39 +58,80 @@ async function getRealWeather(city = USER_CITY){
   }
 }
 
- // ===== 3.5. AGENT MODE - FIXED - NO GEMINI - DIRECT REAL DATA =====
+ // ===== 3.5. AGENT MODE - LAT/LON IN CODE, NOT IN OUTPUT =====
 function isAgentModeRequest(text=''){
   const t=text.toLowerCase();
-  return t.includes("morning briefing") || t.includes("morning report") || t.includes("aaj ka") || t.includes("weather") || t.includes("mausam") || t.includes("vedar") || t.includes("briefing") || t.includes("date");
+  return t.includes("morning briefing") || t.includes("morning report") || t.includes("aaj ka") || t.includes("weather") || t.includes("mausam") || t.includes("briefing") || t.includes("date");
+}
+
+// === YAHI PE AAPKA COMPASS DATA SCRIPT ME RAHEGA - BAHAR NAHI AYEGA ===
+const RAYAGADA_LAT = 19.1822; // 19°10'56" N - Aapke compass se
+const RAYAGADA_LON = 83.6072; // 83°36'26" E - Aapke compass se
+const RAYAGADA_ELEVATION = 387.4; // Elevation - script me rahega
+let USER_CITY = "Rayagada, Odisha";
+
+async function getRealWeather(){
+  try{
+    // Yaha andar hi andar lat/lon use ho raha hai - bahar nahi jayega
+    const w = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${RAYAGADA_LAT}&longitude=${RAYAGADA_LON}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+    const curr = w.current;
+    const daily = w.daily;
+    let cond = "Clear";
+    if(curr.weather_code >= 95) cond = "Thunderstorm";
+    else if(curr.weather_code >= 51) cond = "Rainy / Cloudy";
+    else if(curr.weather_code >= 20) cond = "Partly Cloudy";
+    
+    // Return clean - lat/lon yaha nahi
+    return {
+      full: `Now: ${curr.temperature_2m}°C (${cond}) | Max: ${daily.temperature_2m_max[0]}°C / Min: ${daily.temperature_2m_min[0]}°C | Humidity: ${curr.relative_humidity_2m}% | Wind: ${curr.wind_speed_10m} km/h | Rain: ${daily.precipitation_probability_max[0]}%`,
+      temp: curr.temperature_2m,
+      cond: cond
+    };
+  } catch(e){
+    return { full: "Weather: API busy", temp: "--", cond: "Clear" };
+  }
+}
+
+async function getBatteryInfo(){
+  try{
+    if(navigator.getBattery){
+      const bat = await navigator.getBattery();
+      const level = Math.round(bat.level * 100);
+      if(level >= 90) return `Your device is at ${level}% - Boss aapka to lagbhag full charge hai`;
+      else if(level >= 70) return `Your device is at ${level}% - Good charge hai Boss`;
+      else return `Your device is at ${level}% - Charge pe lagana chahiye Boss`;
+    }
+    return "Battery: Checking...";
+  } catch(e){ return "Battery: Info not available"; }
 }
 
 async function runAgent(goal){
   const now=new Date();
-  const istString=now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true});
   const dateOnly=now.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  const timeOnly=now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:true});
 
-  add(`J.A.R.V.I.S: Fetching live data for ${dateOnly}...`,'ai');
+  add(`J.A.R.V.I.S: Fetching briefing...`,'ai');
   
-  // Aapke compass wale location se real weather
-  const weatherData = await getRealWeather();
+  const weather = await getRealWeather(); // Andar lat/lon use hua, bahar clean ayega
+  const battery = await getBatteryInfo();
 
-  // YE DIRECT ANSWER HAI - GEMINI USE NAHI HOGA, ISLIYE DATE GALAT NAHI HOGA
-  const briefing = `Good morning Boss! Systems are ONLINE.
+  // BAHAR SIRF CLEAN OUTPUT - KOI LAT/LONG NAHI
+  const briefing = `Good morning Boss!
 
-Here is your morning briefing for **${dateOnly}** - ${istString} IST (Rayagada, Odisha - 19.1822, 83.6072 - Elevation 387.4m from your compass):
+**${dateOnly}**
+**${timeOnly} IST**
 
 ### 1. Time & Weather
-${weatherData}
-Current Time: ${istString}
+Location: Rayagada, Odisha
+Weather: ${weather.full}
+Current Time: ${timeOnly}
 
 ### 2. Schedule & Priorities
 No calendar synced Boss. Tell me your 3 top priorities for today and I will track them.
 
-### 3. News & Updates
-Say "search news today" for live news update.
-
-### 4. System Status
-All devices charged, Battery OK. Memory: ${MEMORY.length} chats. Location: Rayagada Locked.
+### 3. System Status
+${battery}
+Location: Rayagada Locked.
 
 Bataiye Boss, aaj ka main goal kya hai?`;
 

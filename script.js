@@ -35,60 +35,66 @@ async function fetchToolJson(url, options={}, timeoutMs=10000){
   catch(e){ clearTimeout(id); throw e; }
 }
 
-// ===== 3. REAL TOOLS =====
-let USER_CITY = localStorage.getItem("jarvis_city") || "Banpur";
+ // ===== 3. REAL TOOLS - RAYAGADA FIXED FROM YOUR COMPASS =====
+let USER_CITY = localStorage.getItem("jarvis_city") || "Rayagada";
+// Aapke compass screenshot se: 19°10'56" N, 83°36'26" E
+const RAYAGADA_LAT = 19.1822;
+const RAYAGADA_LON = 83.6072;
+
 async function getRealWeather(city = USER_CITY){
   try{
-    const geo = await fetchToolJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
-    const loc = geo?.results?.[0]; if(!loc) return `Weather not found for ${city}`;
-    const w = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
-    const c=w.current, d=w.daily;
-    let cond="Clear"; if(c.weather_code>50) cond="Cloudy / Rainy"; else if(c.weather_code>20) cond="Partly Cloudy";
-    return `Weather in ${loc.name}: Now ${c.temperature_2m}°C (${cond}), Max ${d.temperature_2m_max[0]}°C / Min ${d.temperature_2m_min[0]}°C, Humidity ${c.relative_humidity_2m}%, Wind ${c.wind_speed_10m} km/h, Rain Chance ${d.precipitation_probability_max[0]}%`;
-  }catch(e){ return "Weather API busy."; }
-}
-async function handleTools(text){
-  const lower=text.toLowerCase();
-  if(lower.includes("weather")||lower.includes("mausam")){ return await getRealWeather(); }
-  if(lower.includes("open youtube")){ window.open('https://youtube.com','_blank'); return 'Opening YouTube, Boss.'; }
-  if(lower.includes("open google")){ window.open('https://google.com','_blank'); return 'Opening Google, Boss.'; }
-  const play=text.match(/play\s+(.+)/i); if(play){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(play[1]),'_blank'); return `Playing ${play[1]} on YouTube`; }
-  return null;
+    const w = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${RAYAGADA_LAT}&longitude=${RAYAGADA_LON}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+    
+    const curr = w.current;
+    const daily = w.daily;
+    let cond = "Clear";
+    if(curr.weather_code >= 95) cond = "Thunderstorm";
+    else if(curr.weather_code >= 51) cond = "Rainy / Cloudy";
+    else if(curr.weather_code >= 20) cond = "Partly Cloudy";
+
+    return `Location: ${city} (${RAYAGADA_LAT}, ${RAYAGADA_LON}) | Now: ${curr.temperature_2m}°C (${cond}) | Max: ${daily.temperature_2m_max[0]}°C / Min: ${daily.temperature_2m_min[0]}°C | Humidity: ${curr.relative_humidity_2m}% | Wind: ${curr.wind_speed_10m} km/h | Elevation: 387.4m - From your compass`;
+  } catch(e){
+    return `Weather API busy Boss. Location: Rayagada ${RAYAGADA_LAT}, ${RAYAGADA_LON}`;
+  }
 }
 
-// ===== 3.5. AGENT MODE - REAL DATE LOCK =====
+ // ===== 3.5. AGENT MODE - FIXED - NO GEMINI - DIRECT REAL DATA =====
 function isAgentModeRequest(text=''){
   const t=text.toLowerCase();
-  return t.includes("morning briefing") || t.includes("morning report") || t.includes("aaj ka") || t.includes("briefing");
+  return t.includes("morning briefing") || t.includes("morning report") || t.includes("aaj ka") || t.includes("weather") || t.includes("mausam") || t.includes("vedar") || t.includes("briefing") || t.includes("date");
 }
+
 async function runAgent(goal){
   const now=new Date();
-  const istString=now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  const istString=now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true});
   const dateOnly=now.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric'});
-  
+
   add(`J.A.R.V.I.S: Fetching live data for ${dateOnly}...`,'ai');
-  const weatherData=await getRealWeather();
   
-  const finalPrompt = `
-  LIVE DATA - YOU MUST USE THIS:
-    - REAL DATE TODAY IS: ${istString} (Asia/Kolkata). Today is ${dateOnly}. NEVER USE May 24, 2024.
-    - REAL WEATHER: ${weatherData}
-    - SYSTEM: All devices charged, Battery OK.
+  // Aapke compass wale location se real weather
+  const weatherData = await getRealWeather();
 
-  TASK: User said: "${goal}"
-  Create Morning Briefing. Language: User wrote "though" meaning in English, so give briefing in English. If user writes Hindi, give Hinglish.
-  STRUCTURE:
-  Good morning, sir. Systems are online.
-  Here is your morning briefing for **${dateOnly}**:
-  ### Weather & Environment - use REAL WEATHER above
-  ### Schedule & Priorities - say "No calendar synced, tell me your 3 top priorities Boss"
-  ### Markets & News - keep short
-  ### System Status - All charged
-  
-  RULES: NO [brackets] like [Insert Temp]. NO [Time] - [Event]. Use real data only.
-  `;
+  // YE DIRECT ANSWER HAI - GEMINI USE NAHI HOGA, ISLIYE DATE GALAT NAHI HOGA
+  const briefing = `Good morning Boss! Systems are ONLINE.
 
-  return await callGemini(finalPrompt);
+Here is your morning briefing for **${dateOnly}** - ${istString} IST (Rayagada, Odisha - 19.1822, 83.6072 - Elevation 387.4m from your compass):
+
+### 1. Time & Weather
+${weatherData}
+Current Time: ${istString}
+
+### 2. Schedule & Priorities
+No calendar synced Boss. Tell me your 3 top priorities for today and I will track them.
+
+### 3. News & Updates
+Say "search news today" for live news update.
+
+### 4. System Status
+All devices charged, Battery OK. Memory: ${MEMORY.length} chats. Location: Rayagada Locked.
+
+Bataiye Boss, aaj ka main goal kya hai?`;
+
+  return briefing;
 }
 
 // ===== 4. BRAIN =====

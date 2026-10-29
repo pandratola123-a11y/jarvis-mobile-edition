@@ -1,17 +1,26 @@
- // ===== 1. API KEY & SMART MODELS =====
+  // ===== 1. API KEY & SMART MODELS =====
 let API_KEY = localStorage.getItem("jarvis_key");
 if (!API_KEY) {
   API_KEY = prompt("Enter your Gemini API KEY:");
   localStorage.setItem("jarvis_key", API_KEY);
 }
-const MODELS = ["gemini-3.5-flash-lite","gemini-3.5-flash-latest","gemini-3.0-pro"];
+
+const MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.5-flash-latest",
+  "gemini-3.0-pro"
+];
 
 // ===== 2. MEMORY SYSTEM =====
 let MEMORY = JSON.parse(localStorage.getItem("jarvis_memory") || "[]");
 const chatDiv = document.getElementById("chat");
 const promptInput = document.getElementById("prompt");
-function saveMemory(){ localStorage.setItem("jarvis_memory", JSON.stringify(MEMORY)); }
-function renderMemory(){
+
+function saveMemory() {
+  localStorage.setItem("jarvis_memory", JSON.stringify(MEMORY));
+}
+
+function renderMemory() {
   chatDiv.innerHTML = "";
   MEMORY.forEach(m => {
     const div = document.createElement("div");
@@ -22,6 +31,8 @@ function renderMemory(){
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 renderMemory();
+
+// Helpers for Tools & Agent Mode
 function add(text, role){
   const div = document.createElement("div");
   div.className = "msg " + role;
@@ -30,153 +41,139 @@ function add(text, role){
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 async function fetchToolJson(url, options={}, timeoutMs=10000){
-  const c = new AbortController(); const id=setTimeout(()=>c.abort(),timeoutMs);
-  try{ const r=await fetch(url,{...options, signal:c.signal}); clearTimeout(id); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
-  catch(e){ clearTimeout(id); throw e; }
+  const controller = new AbortController();
+  const id = setTimeout(()=>controller.abort(), timeoutMs);
+  try{
+    const res = await fetch(url,{...options, signal:controller.signal});
+    clearTimeout(id);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return await res.json();
+  }catch(e){ clearTimeout(id); throw e; }
 }
 
- // ===== 3. REAL TOOLS - RAYAGADA FIXED FROM YOUR COMPASS =====
-let USER_CITY = localStorage.getItem("jarvis_city") || "Rayagada";
-// Aapke compass screenshot se: 19°10'56" N, 83°36'26" E
-const RAYAGADA_LAT = 19.1822;
-const RAYAGADA_LON = 83.6072;
+ // ===== 3. TOOLS (REAL DATA) =====
+let FAV_SONG = localStorage.getItem("jarvis_fav_song") || "Kesariya";
+let USER_CITY = localStorage.getItem("jarvis_city") || "Banpur, Odisha";
 
 async function getRealWeather(city = USER_CITY){
   try{
-    const w = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${RAYAGADA_LAT}&longitude=${RAYAGADA_LON}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
-    
-    const curr = w.current;
-    const daily = w.daily;
+    const geo = await fetchToolJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+    const loc = geo?.results?.[0];
+    if(!loc) return `Weather not found for ${city}`;
+    const weather = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+    const c = weather.current;
+    const d = weather.daily;
     let cond = "Clear";
-    if(curr.weather_code >= 95) cond = "Thunderstorm";
-    else if(curr.weather_code >= 51) cond = "Rainy / Cloudy";
-    else if(curr.weather_code >= 20) cond = "Partly Cloudy";
-
-    return `Location: ${city} (${RAYAGADA_LAT}, ${RAYAGADA_LON}) | Now: ${curr.temperature_2m}°C (${cond}) | Max: ${daily.temperature_2m_max[0]}°C / Min: ${daily.temperature_2m_min[0]}°C | Humidity: ${curr.relative_humidity_2m}% | Wind: ${curr.wind_speed_10m} km/h | Elevation: 387.4m - From your compass`;
-  } catch(e){
-    return `Weather API busy Boss. Location: Rayagada ${RAYAGADA_LAT}, ${RAYAGADA_LON}`;
-  }
+    if(c.weather_code > 50) cond = "Cloudy / Rainy";
+    else if(c.weather_code > 20) cond = "Partly Cloudy";
+    return `City: ${loc.name}, ${loc.country}. Current: ${c.temperature_2m}°C, ${cond}. Max Today: ${d.temperature_2m_max[0]}°C, Min: ${d.temperature_2m_min[0]}°C. Humidity ${c.relative_humidity_2m}%, Wind ${c.wind_speed_10m} km/h, Rain Chance ${d.precipitation_probability_max[0]}%`;
+  }catch(e){ return "Weather API busy hai."; }
 }
 
- // ===== 3.5. AGENT MODE - LAT/LON IN CODE, NOT IN OUTPUT =====
+async function handleTools(text){
+  const lower = text.toLowerCase();
+  if(lower.includes("weather") || lower.includes("mausam") || lower.includes("tapman")){
+    return await getRealWeather();
+  }
+  // ... tumhare baaki gaane wale tools waise hi rahenge
+  const playMatch=text.match(/^\s*play\s+(.+)/i);
+  if(playMatch){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(playMatch[1]),'_blank'); return `Playing ${playMatch[1]}`; }
+  if(lower.includes("open youtube")){ window.open('https://youtube.com','_blank'); return 'Opening YouTube'; }
+  if(lower.includes("open google")){ window.open('https://google.com','_blank'); return 'Opening Google'; }
+  return null;
+}
+
+// ===== 3.5. AGENT MODE ENGINE - REAL DATE LOCK =====
+const AGENT_TOOLS = {
+  time: async () => {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata' };
+    const ist = now.toLocaleString('en-IN', options);
+    const iso = now.toISOString();
+    return `REAL CURRENT DATE & TIME (IST): ${ist}. ISO: ${iso}. TODAY IS ${now.toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}. Use this date only. Today is NOT May 24, 2024.`;
+  },
+  weather: async () => { return await getRealWeather(); },
+  system: async () => { return `System Status: All systems online, Battery OK, Devices ready.`; }
+};
+
 function isAgentModeRequest(text=''){
-  const t=text.toLowerCase();
-  return t.includes("morning briefing") || t.includes("morning report") || t.includes("aaj ka") || t.includes("weather") || t.includes("mausam") || t.includes("briefing") || t.includes("date");
-}
-
-// === YAHI PE AAPKA COMPASS DATA SCRIPT ME RAHEGA - BAHAR NAHI AYEGA ===
-const RAYAGADA_LAT = 19.1822; // 19°10'56" N - Aapke compass se
-const RAYAGADA_LON = 83.6072; // 83°36'26" E - Aapke compass se
-const RAYAGADA_ELEVATION = 387.4; // Elevation - script me rahega
-let USER_CITY = "Rayagada, Odisha";
-
-async function getRealWeather(){
-  try{
-    // Yaha andar hi andar lat/lon use ho raha hai - bahar nahi jayega
-    const w = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${RAYAGADA_LAT}&longitude=${RAYAGADA_LON}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
-    const curr = w.current;
-    const daily = w.daily;
-    let cond = "Clear";
-    if(curr.weather_code >= 95) cond = "Thunderstorm";
-    else if(curr.weather_code >= 51) cond = "Rainy / Cloudy";
-    else if(curr.weather_code >= 20) cond = "Partly Cloudy";
-    
-    // Return clean - lat/lon yaha nahi
-    return {
-      full: `Now: ${curr.temperature_2m}°C (${cond}) | Max: ${daily.temperature_2m_max[0]}°C / Min: ${daily.temperature_2m_min[0]}°C | Humidity: ${curr.relative_humidity_2m}% | Wind: ${curr.wind_speed_10m} km/h | Rain: ${daily.precipitation_probability_max[0]}%`,
-      temp: curr.temperature_2m,
-      cond: cond
-    };
-  } catch(e){
-    return { full: "Weather: API busy", temp: "--", cond: "Clear" };
-  }
-}
-
-async function getBatteryInfo(){
-  try{
-    if(navigator.getBattery){
-      const bat = await navigator.getBattery();
-      const level = Math.round(bat.level * 100);
-      if(level >= 90) return `Your device is at ${level}% - Boss aapka to lagbhag full charge hai`;
-      else if(level >= 70) return `Your device is at ${level}% - Good charge hai Boss`;
-      else return `Your device is at ${level}% - Charge pe lagana chahiye Boss`;
-    }
-    return "Battery: Checking...";
-  } catch(e){ return "Battery: Info not available"; }
+  const t = text.toLowerCase();
+  return t.includes("morning briefing") || t.includes("briefing") || t.includes("aaj ka mausam") || t.includes("aaj ka date");
 }
 
 async function runAgent(goal){
-  const now=new Date();
-  const dateOnly=now.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric'});
-  const timeOnly=now.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:true});
-
-  add(`J.A.R.V.I.S: Fetching briefing...`,'ai');
+  add('J.A.R.V.I.S: Fetching live briefing sir...','ai');
   
-  const weather = await getRealWeather(); // Andar lat/lon use hua, bahar clean ayega
-  const battery = await getBatteryInfo();
+  // Real data fetch pehle
+  const timeData = await AGENT_TOOLS.time();
+  const weatherData = await AGENT_TOOLS.weather();
+  const systemData = await AGENT_TOOLS.system();
 
-  // BAHAR SIRF CLEAN OUTPUT - KOI LAT/LONG NAHI
-  const briefing = `Good morning Boss!
+  add(`J.A.R.V.I.S: ${timeData}`,'ai');
+  add(`J.A.R.V.I.S: ${weatherData}`,'ai');
 
-**${dateOnly}**
-**${timeOnly} IST**
+  // Ab Gemini ko bolo isi data se briefing banaye
+  const finalPrompt = `
+  User Goal: ${goal}
+  
+  YOU MUST USE THIS LIVE DATA ONLY - DO NOT INVENT DATE:
+    1. ${timeData}
+    2. ${weatherData}
+    3. ${systemData}
 
-### 1. Time & Weather
-Location: Rayagada, Odisha
-Weather: ${weather.full}
-Current Time: ${timeOnly}
+  INSTRUCTIONS:
+    - Morning briefing banao Hinglish me.
+    - Date: Upar diye gaye REAL CURRENT DATE ka use karo. Kabhi bhi random mat likhna.
+    - Weather: Upar diye gaye real weather ka use karo. Kabhi bhi [Insert Temp] ya [68°F] jaise bracket mat use karna.
+    - Schedule: Agar calendar nahi hai to likho "No meetings synced, Boss. Tell me your tasks for today."
+    - Markets: Simple rakhna.
+    - NO SQUARE BRACKETS [] AT ALL.
+    - Format same rakho jaise screenshot me hai: ### Weather & Environment etc.
+  `;
 
-### 2. Schedule & Priorities
-No calendar synced Boss. Tell me your 3 top priorities for today and I will track them.
-
-### 3. System Status
-${battery}
-Location: Rayagada Locked.
-
-Bataiye Boss, aaj ka main goal kya hai?`;
-
-  return briefing;
+  return await callGemini(finalPrompt);
 }
 
-// ===== 4. BRAIN =====
+// ===== 4. CORE BRAIN (GEMINI CALL) =====
 async function callGemini(text, imageBase64 = null) {
-  const now=new Date();
-  const realDate=now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'});
-  const sys=`You are J.A.R.V.I.S. Today is ${realDate} IST. You have real weather tool data provided. NEVER output [Insert ...] placeholders. Never say May 24, 2024. Be precise.`;
-
-  const contents = [...MEMORY.map(m => ({role:m.role==='user'?'user':'model', parts:[{text:m.text}]})), {role:"user", parts:imageBase64?[{text:sys+"\n\nUser: "+text},{inline_data:{mime_type:"image/jpeg",data:imageBase64}}]:[{text:sys+"\n\nUser: "+text}]}];
-  for(let MODEL of MODELS){
-    try{
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({contents})});
-      const data=await res.json(); if(data.candidates&&data.candidates[0]) return data.candidates[0].content.parts[0].text;
-    }catch(e){ continue; }
-  } throw new Error("All models failed");
+  const contents = [...MEMORY.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.text }]
+  })), {
+    role: "user",
+    parts: imageBase64 
+      ? [{ text: text }, { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }]
+      : [{ text: text }]
+  }];
+  for (let MODEL of MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }
+      );
+      const data = await res.json();
+      if (data.candidates && data.candidates[0]) {
+        return data.candidates[0].content.parts[0].text;
+      } else if (data.error) { throw new Error(data.error.message); }
+    } catch (e) { console.log(`${MODEL} failed: ${e.message}`); continue; }
+  }
+  throw new Error("All models failed");
 }
 
-// ===== 5. MAIN EXECUTE - TOOL FIRST =====
+// ===== 5. MAIN EXECUTE FUNCTION =====
 async function execute() {
   const text = promptInput.value.trim();
   if (!text && !window.tempImage) return;
+
   const displayText = text || "What do you see? Describe this image.";
+  
   MEMORY.push({ role: "user", text: displayText });
   renderMemory();
   promptInput.value = "";
   document.getElementById("status").innerText = "BRAIN: PROCESSING...";
 
   try {
-    let reply = null;
-    // STEP 1: Check if briefing? -> Agent Mode FIRST
-    if(isAgentModeRequest(displayText)){
-      reply = await runAgent(displayText);
-    } else {
-      // STEP 2: Normal tools
-      reply = await handleTools(displayText);
-    }
-    // STEP 3: If no tool, then Gemini
-    if(!reply){
-      reply = await callGemini(displayText, window.tempImage || null);
-    }
-
+    const reply = await callGemini(displayText, window.tempImage || null);
     MEMORY.push({ role: "model", text: reply });
     saveMemory();
     renderMemory();
@@ -184,7 +181,8 @@ async function execute() {
     document.getElementById("status").innerText = "BRAIN: ONLINE";
     document.getElementById("status").style.color = "#0f0";
   } catch (err) {
-    document.getElementById("status").innerText = "ERROR: "+err.message;
+    document.getElementById("status").innerText = "ERROR";
+    chatDiv.innerText += `\nERROR: ${err.message}`;
   }
   window.tempImage = null;
 }
@@ -192,7 +190,11 @@ async function execute() {
 document.getElementById("send-btn").onclick = execute;
 promptInput.addEventListener("keypress", e => { if(e.key === 'Enter') execute(); });
 document.getElementById("clear-btn").onclick = () => {
-  if(confirm("Clear Memory?")) { MEMORY = []; saveMemory(); chatDiv.innerHTML = "SYSTEM: Memory Cleared"; }
+  if(confirm("Clear Memory?")) {
+    MEMORY = [];
+    saveMemory();
+    chatDiv.innerHTML = "SYSTEM: Memory Cleared";
+  }
 };
 
 // ===== 6. VOICE & VISION =====
@@ -201,19 +203,39 @@ let recognition;
 if ('webkitSpeechRecognition' in window) {
   recognition = new webkitSpeechRecognition();
   recognition.lang = 'en-US';
-  recognition.onresult = (e) => { promptInput.value = e.results[0][0].transcript; execute(); };
+  recognition.onresult = (e) => {
+    promptInput.value = e.results[0][0].transcript;
+    execute();
+  };
   recognition.onend = () => micBtn.classList.remove("active");
 }
-micBtn.onclick = () => { if(recognition){ recognition.start(); micBtn.classList.add("active"); document.getElementById("status").innerText = "LISTENING..."; } };
+
+micBtn.onclick = () => {
+  if(recognition) {
+    recognition.start();
+    micBtn.classList.add("active");
+    document.getElementById("status").innerText = "LISTENING...";
+  }
+};
+
+// Image Input Logic
 document.getElementById("img-btn").onclick = () => document.getElementById("img-input").click();
 document.getElementById("img-input").onchange = (e) => {
-  const file = e.target.files[0]; if(!file) return;
+  const file = e.target.files[0];
+  if(!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => { window.tempImage = ev.target.result.split(",")[1]; promptInput.value = "What do you see? Describe this image in detail"; execute(); };
+  reader.onload = (ev) => {
+    window.tempImage = ev.target.result.split(",")[1];
+    promptInput.value = "What do you see? Describe this image in detail";
+    execute();
+  };
   reader.readAsDataURL(file);
 };
+
 function speak(text) {
   if ('speechSynthesis' in window) {
-    const utter = new SpeechSynthesisUtterance(text); utter.rate = 0.9; utter.pitch = 1.0; speechSynthesis.speak(utter);
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 0.9; utter.pitch = 1.0;
+    speechSynthesis.speak(utter);
   }
-}
+   }

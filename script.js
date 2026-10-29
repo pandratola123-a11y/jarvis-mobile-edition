@@ -83,54 +83,48 @@ async function handleTools(text){
   return null;
 }
 
-// ===== 3.5. AGENT MODE ENGINE - REAL DATE LOCK =====
+ // ===== 3.5. AGENT MODE ENGINE - REAL DATE LOCK (NEW FIXED) =====
 const AGENT_TOOLS = {
   time: async () => {
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata' };
-    const ist = now.toLocaleString('en-IN', options);
-    const iso = now.toISOString();
-    return `REAL CURRENT DATE & TIME (IST): ${ist}. ISO: ${iso}. TODAY IS ${now.toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}. Use this date only. Today is NOT May 24, 2024.`;
+    try {
+      const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
+      const data = await res.json();
+      const now = new Date(data.datetime);
+      const ist = now.toLocaleString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour:'2-digit', minute:'2-digit', timeZone: 'Asia/Kolkata' });
+      return `REAL CURRENT DATE & TIME (IST): ${ist}. ISO: ${data.datetime}. TODAY IS ${ist}.`;
+    } catch (e) {
+      const now = new Date();
+      return `REAL CURRENT DATE & TIME (IST Fallback): ${now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})}`;
+    }
   },
   weather: async () => { return await getRealWeather(); },
-  system: async () => { return `System Status: All systems online, Battery OK, Devices ready.`; }
+  system: async () => { return `System Status: All systems online, Battery OK.`; }
 };
 
 function isAgentModeRequest(text=''){
   const t = text.toLowerCase();
-  return t.includes("morning briefing") || t.includes("briefing") || t.includes("aaj ka mausam") || t.includes("aaj ka date");
+  return t.includes("morning briefing") || t.includes("briefing") || t.includes("aaj ka");
 }
 
 async function runAgent(goal){
   add('J.A.R.V.I.S: Fetching live briefing sir...','ai');
-  
-  // Real data fetch pehle
   const timeData = await AGENT_TOOLS.time();
   const weatherData = await AGENT_TOOLS.weather();
   const systemData = await AGENT_TOOLS.system();
-
-  add(`J.A.R.V.I.S: ${timeData}`,'ai');
-  add(`J.A.R.V.I.S: ${weatherData}`,'ai');
-
-  // Ab Gemini ko bolo isi data se briefing banaye
+  
   const finalPrompt = `
   User Goal: ${goal}
-  
-  YOU MUST USE THIS LIVE DATA ONLY - DO NOT INVENT DATE:
+  LIVE DATA - YOU MUST USE ONLY THIS:
     1. ${timeData}
     2. ${weatherData}
     3. ${systemData}
 
   INSTRUCTIONS:
     - Morning briefing banao Hinglish me.
-    - Date: Upar diye gaye REAL CURRENT DATE ka use karo. Kabhi bhi random mat likhna.
-    - Weather: Upar diye gaye real weather ka use karo. Kabhi bhi [Insert Temp] ya [68°F] jaise bracket mat use karna.
-    - Schedule: Agar calendar nahi hai to likho "No meetings synced, Boss. Tell me your tasks for today."
-    - Markets: Simple rakhna.
-    - NO SQUARE BRACKETS [] AT ALL.
-    - Format same rakho jaise screenshot me hai: ### Weather & Environment etc.
+    - Date ke liye sirf ${timeData} use karo, khud se date mat banao.
+    - Bracket [] kabhi mat use karna.
+    - Format: ### Weather & Environment, ### Date etc.
   `;
-
   return await callGemini(finalPrompt);
 }
 

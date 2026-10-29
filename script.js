@@ -53,7 +53,7 @@ async function fetchToolJson(url, options={}, timeoutMs=10000){
 
  // ===== 3. TOOLS (REAL DATA) =====
 let FAV_SONG = localStorage.getItem("jarvis_fav_song") || "Kesariya";
-let USER_CITY = localStorage.getItem("jarvis_city") || "Banpur, Odisha";
+let USER_CITY = localStorage.getItem("jarvis_city") || "Rayagada, Odisha";
 
 async function getRealWeather(city = USER_CITY){
   try{

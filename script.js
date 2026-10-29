@@ -51,39 +51,57 @@ async function fetchToolJson(url, options={}, timeoutMs=10000){
   }catch(e){ clearTimeout(id); throw e; }
 }
 
- // ===== 3. TOOLS (REAL DATA) =====
-let FAV_SONG = localStorage.getItem("jarvis_fav_song") || "Kesariya";
-let USER_CITY = localStorage.getItem("jarvis_city") || "Rayagada, Odisha";
+ // ===== 3. TOOLS (REAL DATA) - UPDATED GPS =====
+let FAV_SONG = localStorage.getItem("jarvis_fav_song") || "";
+let USER_CITY = localStorage.getItem("jarvis_city") || "Rayagada";
 
-async function getRealWeather(city = USER_CITY){
-  try{
-    const geo = await fetchToolJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
-    const loc = geo?.results?.[0];
-    if(!loc) return `Weather not found for ${city}`;
-    const weather = await fetchToolJson(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
-    const c = weather.current;
-    const d = weather.daily;
-    let cond = "Clear";
-    if(c.weather_code > 50) cond = "Cloudy / Rainy";
-    else if(c.weather_code > 20) cond = "Partly Cloudy";
-    return `City: ${loc.name}, ${loc.country}. Current: ${c.temperature_2m}°C, ${cond}. Max Today: ${d.temperature_2m_max[0]}°C, Min: ${d.temperature_2m_min[0]}°C. Humidity ${c.relative_humidity_2m}%, Wind ${c.wind_speed_10m} km/h, Rain Chance ${d.precipitation_probability_max[0]}%`;
-  }catch(e){ return "Weather API busy hai."; }
-}
+// NEW TOOL - REAL GPS + COMPASS + WEATHER (Latitude, Altitude, Heading)
+const getLiveGPSWeather = () => {
+  return new Promise(async (resolve) => {
+    if (!navigator.geolocation) {
+      resolve("GPS supported nahi hai is device me.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const alt = pos.coords.altitude ? `${pos.coords.altitude.toFixed(0)}m` : "N/A";
+        const acc = pos.coords.accuracy.toFixed(0);
+        let heading = pos.coords.heading ? `${pos.coords.heading.toFixed(0)}°` : "N/A (moving par milega)";
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Kolkata`;
+        const data = await fetchToolJson(url);
+        const c = data.current;
+        const d = data.daily;
+
+        let cond = "Clear";
+        if(c.weather_code > 1 && c.weather_code < 4) cond = "Partly Cloudy";
+        if(c.weather_code >= 45) cond = "Cloudy / Rainy";
+
+        resolve(`REAL GPS LOCATION: Lat ${lat.toFixed(4)}, Lon ${lon.toFixed(4)}, Alt ${alt}, Accuracy ${acc}m, Compass Heading ${heading}. WEATHER: ${c.temperature_2m}°C, ${cond}, Wind ${c.wind_speed_10m}km/h, Max Today ${d.temperature_2m_max[0]}°C`);
+      } catch (e) {
+        resolve(`GPS mil gaya Lat ${pos.coords.latitude}, Lon ${pos.coords.longitude} par weather fail.`);
+      }
+    }, (err) => {
+      resolve(`GPS Permission do Boss! Error: ${err.message}`);
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+};
 
 async function handleTools(text){
   const lower = text.toLowerCase();
-  if(lower.includes("weather") || lower.includes("mausam") || lower.includes("tapman")){
-    return await getRealWeather();
+  if(lower.includes("weather") || lower.includes("mausam")){
+    return await getLiveGPSWeather();
   }
-  // ... tumhare baaki gaane wale tools waise hi rahenge
-  const playMatch=text.match(/^\s*play\s+(.+)/i);
-  if(playMatch){ window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(playMatch[1]),'_blank'); return `Playing ${playMatch[1]}`; }
-  if(lower.includes("open youtube")){ window.open('https://youtube.com','_blank'); return 'Opening YouTube'; }
-  if(lower.includes("open google")){ window.open('https://google.com','_blank'); return 'Opening Google'; }
+  if(lower.includes("song") || lower.includes("play")){
+    if(FAV_SONG) window.open(FAV_SONG, '_blank');
+    return FAV_SONG ? `Playing your fav song...` : `Kaunsa gaana bajau?`;
+  }
   return null;
 }
 
- // ===== 3.5. AGENT MODE ENGINE - REAL DATE LOCK (NEW FIXED) =====
+// ===== 3.5. AGENT MODE ENGINE - REAL DATE + GPS LOCK (NEW FIXED) =====
 const AGENT_TOOLS = {
   time: async () => {
     try {
@@ -97,7 +115,7 @@ const AGENT_TOOLS = {
       return `REAL CURRENT DATE & TIME (IST Fallback): ${now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata'})}`;
     }
   },
-  weather: async () => { return await getRealWeather(); },
+  location_weather: async () => { return await getLiveGPSWeather(); },
   system: async () => { return `System Status: All systems online, Battery OK.`; }
 };
 
@@ -107,23 +125,24 @@ function isAgentModeRequest(text=''){
 }
 
 async function runAgent(goal){
-  add('J.A.R.V.I.S: Fetching live briefing sir...','ai');
+  add('J.A.R.V.I.S: GPS + Weather lock kar raha hu sir...','ai');
   const timeData = await AGENT_TOOLS.time();
-  const weatherData = await AGENT_TOOLS.weather();
+  const locWeatherData = await AGENT_TOOLS.location_weather();
   const systemData = await AGENT_TOOLS.system();
   
   const finalPrompt = `
   User Goal: ${goal}
   LIVE DATA - YOU MUST USE ONLY THIS:
     1. ${timeData}
-    2. ${weatherData}
+    2. ${locWeatherData}
     3. ${systemData}
 
   INSTRUCTIONS:
     - Morning briefing banao Hinglish me.
-    - Date ke liye sirf ${timeData} use karo, khud se date mat banao.
+    - Date ke liye sirf LIVE DATA 1 use karo.
+    - Location, Latitude, Altitude, Compass, Weather ke liye LIVE DATA 2 use karo.
     - Bracket [] kabhi mat use karna.
-    - Format: ### Weather & Environment, ### Date etc.
+    - Format: ### Date, ### Location & GPS, ### Weather & Environment
   `;
   return await callGemini(finalPrompt);
 }

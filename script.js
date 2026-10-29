@@ -160,7 +160,7 @@ async function callGemini(text, imageBase64 = null) {
   throw new Error("All models failed");
 }
 
-// ===== 5. MAIN EXECUTE FUNCTION =====
+ // ===== 5. MAIN EXECUTE FUNCTION (CORRECTED - TOOL FIRST) =====
 async function execute() {
   const text = promptInput.value.trim();
   if (!text && !window.tempImage) return;
@@ -169,20 +169,38 @@ async function execute() {
   
   MEMORY.push({ role: "user", text: displayText });
   renderMemory();
+  add(`J.A.R.V.I.S: ${displayText}`, 'user');
   promptInput.value = "";
   document.getElementById("status").innerText = "BRAIN: PROCESSING...";
 
   try {
-    const reply = await callGemini(displayText, window.tempImage || null);
+    let reply = null;
+
+    // STEP 1: AGENT MODE CHECK - SABSE PEHLE
+    if (isAgentModeRequest(displayText)) {
+      document.getElementById("status").innerText = "BRAIN: AGENT MODE...";
+      reply = await runAgent(displayText);
+    } else {
+      // STEP 2: NORMAL TOOLS CHECK
+      const toolResult = await handleTools(displayText);
+      if (toolResult) {
+        reply = toolResult;
+      } else {
+        // STEP 3: TABHI GEMINI PE JAO
+        reply = await callGemini(displayText, window.tempImage || null);
+      }
+    }
+
     MEMORY.push({ role: "model", text: reply });
     saveMemory();
     renderMemory();
+    add(`J.A.R.V.I.S: ${reply}`, 'ai');
     speak(reply);
     document.getElementById("status").innerText = "BRAIN: ONLINE";
     document.getElementById("status").style.color = "#0f0";
   } catch (err) {
     document.getElementById("status").innerText = "ERROR";
-    chatDiv.innerText += `\nERROR: ${err.message}`;
+    add(`J.A.R.V.I.S: ERROR: ${err.message}`, 'ai');
   }
   window.tempImage = null;
 }
@@ -194,6 +212,7 @@ document.getElementById("clear-btn").onclick = () => {
     MEMORY = [];
     saveMemory();
     chatDiv.innerHTML = "SYSTEM: Memory Cleared";
+    localStorage.removeItem("jarvis_memory");
   }
 };
 
